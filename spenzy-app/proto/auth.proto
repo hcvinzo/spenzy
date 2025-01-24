@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package auth;
+
+// Authentication service definition
+service AuthService {
+    // Authenticate with username and password
+    rpc Authenticate (AuthRequest) returns (AuthResponse) {}
+    
+    // Exchange token from mobile app
+    rpc ExchangeToken (TokenExchangeRequest) returns (AuthResponse) {}
+    
+    // Refresh an expired token
+    rpc RefreshToken (RefreshTokenRequest) returns (AuthResponse) {}
+}
+
+// Request for username/password authentication
+message AuthRequest {
+    string username = 1;
+    string password = 2;
+}
+
+// Request for token exchange
+message TokenExchangeRequest {
+    string token = 1;
+}
+
+// Request for token refresh
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+// Response containing tokens
+message AuthResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    int32 expires_in = 3;
+}

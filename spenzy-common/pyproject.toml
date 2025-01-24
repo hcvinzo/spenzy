@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spenzy-common"
+version = "0.1.0"
+authors = [
+  { name="Hakan Cicek" },
+]
+description = "Spenzy Common Library"
+requires-python = ">=3.12"
+dependencies = [
+    "python-keycloak>=3.0.0",
+    "grpcio>=1.68.0",
+    "grpcio-tools>=1.68.0",
+    "PyJWT>=2.8.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+package-dir = {"spenzy_common" = "spenzy_common"}
+packages = ["spenzy_common", "spenzy_common.auth", "spenzy_common.middleware", "spenzy_common.utils", "proto"] 

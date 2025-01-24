@@ -1,0 +1,82 @@
+=== OCR EXTRACTED TEXT ===
+==================================================
+--- Page 1 ---
+je Mar A gf AT
+Bermed Medikal Sağlık Ürünleri Kozmetik Temizlik 3 A ors Е: И
+Malzemeleri ithalat ihracat San.Tic.Ltd.Şti. 5 5 Ñ SU a BE
+Batısitesi Mah. 2306 Cadde No: 34 No: Yenimahalle / 3 y, DE in Hr.
+Ankara u aes a va Ha
+Tel: 3122565510 e-Arşiv Fatura Ea is Ea
+Web Sitesi: www.bermedsaglik.com р ate ai Es read
+e-Posta: info@bermedsaglik.com 回 ! N QUE PE ロン
+Vergi Dairesi: ULUS 1 > 3
+VKN: 1660814384
+Ticaret Sicil No: 478196 0
+MERSİS No: 0166081438400001 /
+SAYIN O -
+Hakan Çiçek
+Meydan Avm. Balkan Cad. No:62 Justwork Kampüsü Fatih Sultan
+Mehmet Ümraniye İstanbul Fr. 1
+e-Posta: 4886870293 5277167846@hepsifatura.com Sağlık Ürünleri
+Vergi Dairesi:
+TCKN: 11111111111 Tarih: 09-10-2024
+ETTN: 84e7bb2b-afa3-4a67-bea7-badb41acdefd Fatura No: BER2024000019631
+Özelleştirme No: TR1.2
+Senaryo: EARSIVFATURA
+Fatura Tipi: SATIS
+Siparis No: 4886870293
+Siparis Tarihi: 07-10-2024
+Son Ödeme Tarihi: 09-10-2024
+Oluşma Zamanı: (13:52:56
+Sıra ， ， Birim | İskonto/(A)rtırım Mal Hizmet KDV KDV
+No ВБ BIEN Fiyat Tutarı Tutarı Oranı Tutarı
+: 280,1455 o 28,01
+1 HBCVO0001R0ECO Medcare Yatak Koruyucu Fırsat Paketi 60X90 60 Adet 1 Adet TL 0,00TL 280,15 TL 0 TL
+Mal Hizmet Toplam Tutarı: 280,15 TL
+KDV Matrahı (%10.00): 280,15 TL
+Vergi Hariç Tutar: 280,15 TL
+Hesaplanan KDV (9610.00) : 28,01 TL
+Vergiler Dahil Toplam Tutar: 308,16 TL
+Ödenecek Tutar: 308,16 TL
+* Gönderim Şekli: ELEKTRONIK
+* YALNIZ ÜçYüzSekizTL,OnAltıKr.
+* İrsaliye yerine geçer.
+* HB Sipariş No :4886870293
+* İşbu fatura tutarı D-Market Elek. Hizm. Tic. A.Ş. hesabına devredilmiştir.
+* Denizbank — Sincan Şubesi 3730
+* Hesap No :30421000
+* IBAN : 1818 0013 4000 0205 9491 7000 01
+* SÜRAT KARGO KARGO KAMPANYA KODU : 62952771678121
+* Güncel bakiyeniz : 0,00 TL
+* Web Adresi: www.hepsiburada.com
+* Ödeme Şekli: KREDIKARTI/BANKAKARTI
+* Ödeme Tarihi: 2024-10-09
+* Gönderim Tarihi: 2024-10-09
+* Gönderi Taşıyan Kişi Türü: Tüzel
+* Gönderi Taşıyan Kişi Kimlik No: 7870233582
+* Gönderi Taşıyan Kişi Ad: Sürat Kargo
+e-Arşiv izni kapsamında elektronik ortamda iletilmiştir.
+Bu satış İnternet üzerinden yapılmıştır.
+ÖDEME ŞEKLİ
+Ödeme Şekli: Kredi Kartı Son Ödeme Tarihi: 09-10-2024
+
+=== OPENAI ANALYSIS ===
+==================================================
+{
+    "type": "invoice",
+    "language": "Turkish",
+    "currency": "TL",
+    "vendor": "Bermed Medikal Sağlık Ürünleri Kozmetik Temizlik Malzemeleri ithalat ihracat San.Tic.Ltd.Şti.",
+    "customer": "Hakan Çiçek",
+    "date": "2024-10-09",
+    "amount": "308.16",
+    "tax": "28.01",
+    "category": "Medical/Healthcare"
+}
+
+=== OPENAI TOKEN USAGE ===
+==================================================
+Model: gpt-3.5-turbo-0125
+Prompt Tokens: 1149
+Completion Tokens: 120
+Total Tokens: 1269

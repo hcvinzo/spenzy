@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package expense;
+
+import "google/protobuf/timestamp.proto";
+
+service ExpenseService {
+  // Basic CRUD operations
+  rpc CreateExpense (CreateExpenseRequest) returns (ExpenseResponse) {}
+  rpc GetExpense (GetExpenseRequest) returns (ExpenseResponse) {}
+  rpc UpdateExpense (UpdateExpenseRequest) returns (ExpenseResponse) {}
+  rpc DeleteExpense (DeleteExpenseRequest) returns (DeleteExpenseResponse) {}
+  rpc ListExpenses (ListExpensesRequest) returns (ListExpensesResponse) {}
+}
+
+message Expense {
+  int32 id = 1;
+  google.protobuf.Timestamp expense_date = 2;
+  string vendor_name = 3;
+  double total_amount = 4;
+  double total_tax = 5;
+  string category = 6;
+  string currency = 7;
+  bool is_paid = 8;
+  google.protobuf.Timestamp paid_on = 9;
+  
+  // Audit fields
+  google.protobuf.Timestamp created_on = 10;
+  string created_by = 11;
+  google.protobuf.Timestamp updated_on = 12;
+  string updated_by = 13;
+}
+
+message CreateExpenseRequest {
+  google.protobuf.Timestamp expense_date = 1;
+  string vendor_name = 2;
+  double total_amount = 3;
+  double total_tax = 4;
+  string category = 5;
+  string currency = 6;
+  bool is_paid = 7;
+  google.protobuf.Timestamp paid_on = 8;
+}
+
+message GetExpenseRequest {
+  int32 id = 1;
+}
+
+message UpdateExpenseRequest {
+  int32 id = 1;
+  google.protobuf.Timestamp expense_date = 2;
+  string vendor_name = 3;
+  double total_amount = 4;
+  double total_tax = 5;
+  string category = 6;
+  string currency = 7;
+  bool is_paid = 8;
+  google.protobuf.Timestamp paid_on = 9;
+}
+
+message DeleteExpenseRequest {
+  int32 id = 1;
+}
+
+message DeleteExpenseResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message ExpenseResponse {
+  Expense expense = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message ListExpensesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string sort_by = 3;
+  bool ascending = 4;
+  map<string, string> filters = 5;
+}
+
+message ListExpensesResponse {
+  repeated Expense expenses = 1;
+  int32 total_count = 2;
+  bool success = 3;
+  string error_message = 4;
+} 

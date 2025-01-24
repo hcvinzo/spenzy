@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package document;
+
+service DocumentService {
+  rpc ParseDocument (ParseDocumentRequest) returns (ParseDocumentResponse) {}
+  rpc GetDocumentFile (GetDocumentRequest) returns (stream FileChunk) {}
+  rpc ParseDocumentText (ParseDocumentTextRequest) returns (ParseDocumentTextResponse) {}
+}
+
+message ParseDocumentRequest {
+  bytes file_content = 1;
+  string file_name = 2;
+}
+
+message ParseDocumentResponse {
+  string document_type = 1;  // invoice, bill, or receipt
+  string language = 2;
+  string currency = 3;
+  string vendor_name = 4;
+  string customer_name = 5;
+  string invoice_date = 6;
+  string due_amount = 7;
+  string total_tax = 8;
+  string category = 9;
+  string raw_text = 10;  // OCR extracted text
+  bool success = 11;
+  string error_message = 12;
+}
+
+message GetDocumentRequest {
+  string file_id = 1;
+}
+
+message FileChunk {
+  bytes content = 1;
+}
+
+message ParseDocumentTextRequest {
+  string text = 1;  // The text to be parsed
+}
+
+message ParseDocumentTextResponse {
+  string document_type = 1;  // invoice, bill, or receipt
+  string language = 2;
+  string currency = 3;
+  string vendor_name = 4;
+  string customer_name = 5;
+  string invoice_date = 6;
+  string due_amount = 7;
+  string total_tax = 8;
+  string category = 9;
+  bool success = 10;
+  string error_message = 11;
+} 

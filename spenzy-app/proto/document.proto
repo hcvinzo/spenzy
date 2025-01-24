@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package document;
+
+// Document service for processing various types of documents
+service DocumentService {
+  // Parse a document file and extract information
+  rpc ParseDocument (ParseDocumentRequest) returns (ParseDocumentResponse);
+  
+  // Get a processed document file
+  rpc GetDocumentFile (GetDocumentRequest) returns (stream FileChunk);
+  
+  // Parse document text directly
+  rpc ParseDocumentText (ParseDocumentTextRequest) returns (ParseDocumentTextResponse);
+}
+
+// Request message for parsing a document
+message ParseDocumentRequest {
+  bytes file_content = 1;
+  string file_name = 2;
+}
+
+// Response message containing parsed document information
+message ParseDocumentResponse {
+  string document_type = 1;
+  string language = 2;
+  string currency = 3;
+  string vendor_name = 4;
+  string customer_name = 5;
+  string document_date = 6;
+  string due_amount = 7;
+  string total_tax = 8;
+  string category = 9;
+  string raw_text = 10;
+  bool success = 11;
+  string error_message = 12;
+}
+
+// Request message for getting a document file
+message GetDocumentRequest {
+  string document_id = 1;
+}
+
+// File chunk for streaming document files
+message FileChunk {
+  bytes content = 1;
+}
+
+// Request message for parsing document text
+message ParseDocumentTextRequest {
+  string text = 1;
+}
+
+// Response message for parsed document text
+message ParseDocumentTextResponse {
+  string document_type = 1;
+  string language = 2;
+  string currency = 3;
+  string vendor_name = 4;
+  string customer_name = 5;
+  string document_date = 6;
+  string due_amount = 7;
+  string total_tax = 8;
+  string category = 9;
+  bool success = 10;
+  string error_message = 11;
+} 
