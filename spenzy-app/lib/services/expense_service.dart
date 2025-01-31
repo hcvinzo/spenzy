@@ -25,12 +25,30 @@ class ExpenseService {
     await _channel.shutdown();
   }
 
-  Future<List<expense.Expense>> listExpenses() async {
+  Future<List<expense.Expense>> listExpenses({
+    int page = 1,
+    int pageSize = 20,
+    String? sortBy,
+    bool ascending = true,
+    Map<String, String>? filters,
+  }) async {
     try {
       final token = await _serviceAuth.getServiceToken('spenzy-expense.service');
       if (token == null) throw Exception('Not authenticated');
 
-      final request = expense.ListExpensesRequest();
+      final request = expense.ListExpensesRequest()
+        ..page = page
+        ..pageSize = pageSize;
+      
+      if (sortBy != null) {
+        request.sortBy = sortBy;
+        request.ascending = ascending;
+      }
+
+      if (filters != null) {
+        request.filters.addAll(filters);
+      }
+
       final response = await _client.listExpenses(
         request,
         options: CallOptions(metadata: {
@@ -77,7 +95,7 @@ class ExpenseService {
     }
   }
 
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(int id) async {
     try {
       final token = await _serviceAuth.getServiceToken('spenzy-expense.service');
       if (token == null) throw Exception('Not authenticated');
@@ -96,7 +114,7 @@ class ExpenseService {
     }
   }
 
-  Future<expense.Expense> getExpense(String id) async {
+  Future<expense.Expense> getExpense(int id) async {
     try {
       final token = await _serviceAuth.getServiceToken('spenzy-expense.service');
       if (token == null) throw Exception('Not authenticated');

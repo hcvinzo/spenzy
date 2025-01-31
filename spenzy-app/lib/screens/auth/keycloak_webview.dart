@@ -41,7 +41,7 @@ class _KeycloakWebViewState extends State<KeycloakWebView> {
             });
           },
           onNavigationRequest: (NavigationRequest request) {
-            if (request.url.startsWith('invoiceparser://')) {
+            if (request.url.startsWith('spenzy://auth')) {
               widget.onAuthCallback(Uri.parse(request.url));
               return NavigationDecision.prevent;
             }

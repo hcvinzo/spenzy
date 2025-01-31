@@ -1,14 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:spenzy/generated/expense.pb.dart';
-import 'package:spenzy/generated/document.pb.dart';
-import 'package:spenzy/services/expense_service.dart';
-import 'package:spenzy/services/document_service.dart';
-import 'package:google/protobuf/timestamp.pb.dart';
+import 'package:intl/intl.dart';
+import 'package:spenzy_app/generated/proto/expense/expense.pb.dart' as expense_pb;
+import 'package:spenzy_app/generated/proto/document/document.pb.dart';
+import 'package:spenzy_app/services/expense_service.dart';
+import 'package:spenzy_app/services/document_service.dart';
+import 'package:spenzy_app/generated/proto/google/protobuf/timestamp.pb.dart';
+import 'package:spenzy_app/utils/document_picker.dart';
+import 'package:spenzy_app/services/category_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final DocumentResponse? documentResponse;
+  
+  const AddExpenseScreen({
+    super.key,
+    this.documentResponse,
+  });
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -17,7 +24,8 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _expenseService = ExpenseService();
-  final _documentService = DocumentService();
+  final _categoryService = CategoryService();
+  late final DocumentPicker _documentPicker;
   bool _isLoading = false;
   File? _selectedFile;
 
@@ -25,73 +33,115 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _vendorNameController = TextEditingController();
   final _totalAmountController = TextEditingController();
   final _totalTaxController = TextEditingController();
-  final _categoryController = TextEditingController();
+  expense_pb.Category? _selectedCategory;
   String _selectedCurrency = 'USD';
   bool _isPaid = false;
   DateTime _expenseDate = DateTime.now();
   DateTime? _paidOn;
 
   final List<String> _currencies = ['USD', 'EUR', 'TRY'];
-  final List<String> _categories = ['Office', 'Travel', 'Meals', 'Supplies', 'Other'];
+  List<expense_pb.Category> _categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _documentPicker = DocumentPicker(
+      onLoadingChanged: (loading) => setState(() => _isLoading = loading),
+      onError: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        }
+      },
+      onDocumentProcessed: (response, file) {
+        setState(() => _selectedFile = file);
+        _fillFormWithDocumentData(response);
+      },
+    );
+    
+    if (widget.documentResponse != null) {
+      _fillFormWithDocumentData(widget.documentResponse!);
+    }
+
+    // Load categories when screen initializes
+    _loadCategories();
+  }
 
   @override
   void dispose() {
     _vendorNameController.dispose();
     _totalAmountController.dispose();
     _totalTaxController.dispose();
-    _categoryController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDocument() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _loadCategories() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      
-      if (image != null) {
-        setState(() {
-          _selectedFile = File(image.path);
-        });
-        
-        // Upload and parse document
-        final response = await _documentService.parseDocument(
-          file: _selectedFile!,
-          fileName: image.name,
-        );
-        
-        // Fill form with parsed data
-        _fillFormWithDocumentData(response);
-      }
+      final categories = await _categoryService.listCategories();
+      setState(() {
+        _categories = categories;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error processing document: $e')),
+          SnackBar(content: Text('Error loading categories: $e')),
         );
       }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   void _fillFormWithDocumentData(DocumentResponse response) {
     setState(() {
       _vendorNameController.text = response.vendorName;
-      _totalAmountController.text = response.totalAmount.toString();
-      _totalTaxController.text = response.totalTax.toString();
-      if (_categories.contains(response.category)) {
-        _categoryController.text = response.category;
+      _totalAmountController.text = response.dueAmountValue.toString();
+      _totalTaxController.text = response.totalTaxValue.toString();
+      
+      // Try to find category by name from document
+      if (response.category.isNotEmpty && _categories.isNotEmpty) {
+        debugPrint('Document suggested category: ${response.category}');
+        debugPrint('Available categories: ${_categories.map((c) => c.name).join(', ')}');
+        
+        // First try exact match
+        try {
+          _selectedCategory = _categories.firstWhere(
+            (category) => category.name.toLowerCase() == response.category.toLowerCase(),
+          );
+          debugPrint('Found exact category match: ${_selectedCategory!.name}');
+        } catch (e) {
+          // If no exact match, try partial match
+          try {
+            _selectedCategory = _categories.firstWhere(
+              (category) => 
+                category.name.toLowerCase().contains(response.category.toLowerCase()) ||
+                response.category.toLowerCase().contains(category.name.toLowerCase()),
+            );
+            debugPrint('Found partial category match: ${_selectedCategory!.name}');
+          } catch (e) {
+            // If no match at all, use the first category
+            _selectedCategory = _categories.first;
+            debugPrint('No matching category found, using first category: ${_selectedCategory!.name}');
+          }
+        }
+      } else {
+        // If no category from document or no categories available
+        _selectedCategory = _categories.isNotEmpty ? _categories.first : null;
+        debugPrint('Using default category: ${_selectedCategory?.name ?? 'none'}');
       }
+      
       if (_currencies.contains(response.currency)) {
         _selectedCurrency = response.currency;
       }
-      if (response.hasDate()) {
-        _expenseDate = response.date.toDateTime();
+      if (response.invoiceDate.isNotEmpty) {
+        try {
+          _expenseDate = DateFormat('yyyy-MM-dd').parse(response.invoiceDate);
+        } catch (e) {
+          debugPrint('Failed to parse invoice date: ${response.invoiceDate}');
+        }
+      }
+      _isPaid = response.isPaid;
+      if (_isPaid) {
+        _paidOn = _expenseDate;
       }
     });
   }
@@ -104,12 +154,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     });
 
     try {
-      final request = CreateExpenseRequest(
+      final request = expense_pb.CreateExpenseRequest(
         expenseDate: Timestamp.fromDateTime(_expenseDate),
         vendorName: _vendorNameController.text,
         totalAmount: double.parse(_totalAmountController.text),
         totalTax: double.parse(_totalTaxController.text),
-        category: _categoryController.text,
+        categoryId: _selectedCategory?.id ?? 0,
         currency: _selectedCurrency,
         isPaid: _isPaid,
         paidOn: _isPaid && _paidOn != null ? Timestamp.fromDateTime(_paidOn!) : null,
@@ -149,11 +199,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_selectedFile == null)
-                      ElevatedButton.icon(
-                        onPressed: _pickDocument,
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text('Upload Document'),
-                      )
+                      _documentPicker.buildDocumentPickerRow()
                     else
                       Card(
                         child: Padding(
@@ -176,7 +222,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                       style: Theme.of(context).textTheme.titleMedium,
                                     ),
                                     TextButton(
-                                      onPressed: _pickDocument,
+                                      onPressed: _documentPicker.pickAndProcessFile,
                                       child: const Text('Change document'),
                                     ),
                                   ],
@@ -245,8 +291,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _categoryController.text.isEmpty ? null : _categoryController.text,
+                    DropdownButtonFormField<expense_pb.Category>(
+                      value: _selectedCategory,
                       decoration: const InputDecoration(
                         labelText: 'Category',
                         border: OutlineInputBorder(),
@@ -254,16 +300,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       items: _categories.map((category) {
                         return DropdownMenuItem(
                           value: category,
-                          child: Text(category),
+                          child: Text(category.name),
                         );
                       }).toList(),
                       onChanged: (value) {
                         setState(() {
-                          _categoryController.text = value ?? '';
+                          _selectedCategory = value;
                         });
                       },
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null) {
                           return 'Please select a category';
                         }
                         return null;
@@ -346,7 +392,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: _saveExpense,
+                      onPressed: () {
+                        if (_selectedCategory == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select a category')),
+                          );
+                          return;
+                        }
+                        _saveExpense();
+                      },
                       child: const Text('Save Expense'),
                     ),
                   ],

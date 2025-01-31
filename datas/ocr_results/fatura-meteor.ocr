@@ -1,0 +1,85 @@
+=== OCR EXTRACTED TEXT ===
+==================================================
+--- Page 1 ---
+Meteor Endüstri ve Enerji Anonim Şirketi
+ISMET PASA MAH. ATATURK BULVARI BLV. No:156 me 607
+77000 MERKEZ/ YALOVA
+Tel: 444 8 391 Fax:
+Web Sitesi: www. meteorpetrol.com で EDN
+E-Posta: muhasebe@meteorpetrol.com.tr ke * 回 La pu = ¿al Y = [a]
+Vergi Dairesi: YALOVA VD fs 2 Fahne late py teh
+e EL E 5 ree a dei is
+VKN: 6190585051 à > (y я
+MERSISNO: 0619058505100001 3 À Ed ‏عدر‎ НК b
+TICARETSICILNO: 2787 Sevens 223 Mord Mağ fein Sa
+PTT ar SE a
+ーーーーーーーーーーーーーーーーーーーーーーーーーーーー 一 e-Arsiv Fatura ci mye La Re
+OT roca fa Fa
+= Pye ‏زد ا لكت‎
+vo y ‏أله عمد‎ O
+par 7 CAE ET LIT
+helis EE
+ューーーーーーーーーーーーーーーーーーーーーー
+SAYIN
+HAKAN ÇİÇEK
+HAKAN ÇİÇEK
+MERDICENKOY YOLU CAD. NO:31 CICEK APT. DAIRE:14 |
+KUCUKBAKKALKOY ATAŞEHİR ISTANBUL of
+ATASEHIR/ Istanbul ENDÜSTI 'NERJİ A.Ş.
+Web Sitesi: İsmetpaşa Mjx)Atgtirk Bv. No:156 YALOVA
+E-Posta: hc_vinzo@hotmail.com ee fal o. nr в
+Tel: 5334921300 Fax: Mergis No:0619 058 5051 00001 Fatura Tipi: SATIS
+Vergi Dairesi: . [ Belge No: lOEA2024000021180|
+TCKN: 25394540338 Düzenlenme Tarihi: |15-12-2024
+ma 14:52:12
+ETTN: 767AB8E9-29FC-4627-A507-8D9668BCE7A3
+Miktar Birim Fiyat Iskonto Iskonto KDV Oranı | KDV Tutarı Mal Hizmet
+Oranı Tutarı Tutarı
+KURŞUNSUZ BENZİN 95 OKTAN 23,8217) 349846171] | | % 20,00 166,25TL| 833,33 TL]
+Mal Hizmet Toplam Tutaril 833,33 TL]
+Toplam Iskonto| 2,08 ТЦ
+kv Matra) 051,25 TI
+Hesaplanan KDV(831,25 %20) 166, 25TL]
+Vergiler Toplamı| 166, 25TL]
+Vergiler Dahil Toplam Tutar| 997,50TL|
+Ödenecek Tutar) 997,50TL|
+BANKA HESAP BİLGİLERİ
+BANKA IBAN DÖVİZ
+ZİRAAT BANKASI A.Ş. CIFTLIKKOY/YALOVA ŞUBE TR95 0001 0023 5444 7436 7750 04 TL
+GARANTİ T.A.Ş. ULUDAĞ TİCARİ ŞUBESİ TR96 0006 2001 6670 0006 2948 82 TL
+YAPI KREDİ A.Ş ATABULVARI TICARI SUBE TR81 0006 7010 0000 0061 7695 01 TL
+AKBANK T.A.Ş BURSA OSB ŞUBESİ TR52 0004 6002 1988 8000 0982 52 TL
+19 BANKASI A.Ş.YALOVA ŞUBESİ TR30 0006 4000 0012 5000 9912 69 TL
+T.HALK BANKASI A.Ş. ORG.SAN.TIC.BURSA ŞUBESİ TR86 0001 2009 6100 0010 260631 TL
+ZİRAAT KATILIM A.Ş.ULUDAĞ TİCARİ ŞUBE TR28 0020 9000 0008 8319 0000 01 TL
+VAKIFBANK T.A.Ş.BURSA TICARI ŞUBESİ TR84 0001 5001 5800 7285 0322 07 TL
+3 Beray MN
+03 Я
+PazarFili Sy
+H Dame
+Fırsatları Yakalamanın En Kolay Hali In
+ER =
+www.pazarfili.com RZ
+= FE
+
+=== OPENAI ANALYSIS ===
+==================================================
+{
+    "type": "invoice",
+    "language": "Turkish",
+    "currency": "TL",
+    "vendor": "Meteor Endüstri ve Enerji Anonim Şirketi",
+    "customer": "HAKAN ÇİÇEK",
+    "date": "15-12-2024",
+    "amount": "997,50",
+    "tax": "166,25",
+    "category": "Gas/Fuel",
+    "paid": true
+}
+
+=== OPENAI TOKEN USAGE ===
+==================================================
+Model: gpt-3.5-turbo-0125
+Prompt Tokens: 1346
+Completion Tokens: 103
+Total Tokens: 1449

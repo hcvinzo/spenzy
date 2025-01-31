@@ -1,12 +1,57 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final _authService = AuthService();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final isAuthenticated = await _authService.isAuthenticated();
+    if (mounted) {
+      if (isAuthenticated) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAuth({required bool isRegister}) async {
+    try {
+      await _authService.login(context, isRegister: isRegister);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Authentication failed: $e')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -36,9 +81,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton(
-                onPressed: () async {
-                  await authService.login(context, isRegister: false);
-                },
+                onPressed: () => _handleAuth(isRegister: false),
                 child: const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text('Login'),
@@ -46,9 +89,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: () async {
-                  await authService.login(context, isRegister: true);
-                },
+                onPressed: () => _handleAuth(isRegister: true),
                 child: const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text('Register'),

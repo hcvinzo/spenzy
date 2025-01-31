@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:grpc/grpc.dart';
-import 'package:spenzy_app/generated/proto/document/document.pbgrpc.dart' as document;
-import 'package:spenzy_app/generated/proto/expense/expense.pbgrpc.dart' as expense;
+import 'package:spenzy_app/generated/proto/document/auth.pbgrpc.dart' as document_auth;
+import 'package:spenzy_app/generated/proto/expense/auth.pbgrpc.dart' as expense_auth;
 
 class ServiceAuth {
   static final ServiceAuth _instance = ServiceAuth._internal();
@@ -16,7 +16,7 @@ class ServiceAuth {
         credentials: ChannelCredentials.insecure(),
       ),
     );
-    _documentAuthClient = document.AuthServiceClient(_documentChannel);
+    _documentAuthClient = document_auth.AuthServiceClient(_documentChannel);
 
     // Initialize expense service client
     _expenseChannel = ClientChannel(
@@ -26,7 +26,7 @@ class ServiceAuth {
         credentials: ChannelCredentials.insecure(),
       ),
     );
-    _expenseAuthClient = expense.AuthServiceClient(_expenseChannel);
+    _expenseAuthClient = expense_auth.AuthServiceClient(_expenseChannel);
   }
 
   static const String grpcHost = 'localhost';
@@ -43,8 +43,8 @@ class ServiceAuth {
   // gRPC channels and clients for both services
   late final ClientChannel _documentChannel;
   late final ClientChannel _expenseChannel;
-  late final document.AuthServiceClient _documentAuthClient;
-  late final expense.AuthServiceClient _expenseAuthClient;
+  late final document_auth.AuthServiceClient _documentAuthClient;
+  late final expense_auth.AuthServiceClient _expenseAuthClient;
 
   Future<void> dispose() async {
     await _documentChannel.shutdown();
@@ -61,7 +61,7 @@ class ServiceAuth {
   Future<void> refreshServiceToken(String service, String refreshToken) async {
     try {
       if (service == 'spenzy-document.service') {
-        final request = document.RefreshTokenRequest()
+        final request = document_auth.RefreshTokenRequest()
           ..refreshToken = refreshToken;
         
         final response = await _documentAuthClient.refreshToken(
@@ -71,7 +71,7 @@ class ServiceAuth {
         
         await _storage.write(key: documentServiceTokenKey, value: response.accessToken);
       } else {
-        final request = expense.RefreshTokenRequest()
+        final request = expense_auth.RefreshTokenRequest()
           ..refreshToken = refreshToken;
         
         final response = await _expenseAuthClient.refreshToken(
@@ -103,7 +103,7 @@ class ServiceAuth {
   Future<String> exchangeToken(String token, String service) async {
     try {
       if (service == 'spenzy-document.service') {
-        final request = document.ExchangeTokenRequest()
+        final request = document_auth.TokenExchangeRequest()
           ..token = token;
         
         final response = await _documentAuthClient.exchangeToken(
@@ -114,7 +114,7 @@ class ServiceAuth {
         await _storage.write(key: documentServiceTokenKey, value: response.accessToken);
         return response.accessToken;
       } else {
-        final request = expense.ExchangeTokenRequest()
+        final request = expense_auth.TokenExchangeRequest()
           ..token = token;
         
         final response = await _expenseAuthClient.exchangeToken(
@@ -138,7 +138,7 @@ class ServiceAuth {
   Future<bool> verifyServiceToken(String service, String token) async {
     try {
       if (service == 'spenzy-document.service') {
-        final request = document.RefreshTokenRequest()
+        final request = document_auth.RefreshTokenRequest()
           ..refreshToken = '';
         
         await _documentAuthClient.refreshToken(
@@ -148,7 +148,7 @@ class ServiceAuth {
           }),
         );
       } else {
-        final request = expense.RefreshTokenRequest()
+        final request = expense_auth.RefreshTokenRequest()
           ..refreshToken = '';
         
         await _expenseAuthClient.refreshToken(

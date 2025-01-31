@@ -1,0 +1,66 @@
+=== OCR EXTRACTED TEXT ===
+==================================================
+--- Page 1 ---
+Boyner Büyük Mağazacılık A.Ş.
+BÜYÜKDERE CAD. USO CENTER BİNASI KAT:B01-Z02
+34396 Sarıyer/ istanbul
+Tel: 212 3357575 Fax: 212 2766880
+Web Sitesi: www.boyner.com.tr
+Vergi Dairesi: Büyük Mükellefler
+VKN: 5200043963
+TICARETSICILNO: 284082 e-Arsiv
+ーー Özelleştirme No: TR1.2
+Cicek (Fatura Tip [SATIS
+ао 5 (Fatura No: |BK02024002884117
+Küçükbakkalköy Mah. Merdivenköy Yolu Cd. No:31/14 Kat:533; ./ . —
+1 1 1029654636
+Web Sitesi: (Fatura Tarihi: [2024-06-25
+E-Posta: he_vinzo@hotmail.com Ödeme Şekli: | |
+Vergi Dairesi: ; > Belge No: 584391170
+TCKN: 21111111111
+ETTN: 8de04940-2263-4fa4-8ecf-960ee0329a82
+Miz. Kodu | М | м | Miktar | KDV Oram
+5003117295009 adidas Beyaz Erkek Lifestyle Ayakkabı ID 1.999,00 TL] 10 | %10,00 1.999,00TL)
+3000008282 Gönderim Bedeli 99,99 TL] 10 | 220,00 99,99TL)
+Mal Hizmet Toplam Tutarı 2.098,99TL
+Toplam iskonto 499,75TL
+Hesaplanan KDV Matrahı(% 10) 1.362,95TL
+Hesaplanan KDV(%10) 136,30TL
+Hesaplanan KDV Matrahi(%20), 83,33TL
+Hesaplanan KDV(%20) 16,66TL
+Ödenecek Tutar)  1.599,24TL
+Bu satış internet üzerinden yapılmıştır.
+E-Arşiv izni kapsamında elektronik ortamda iletilmiştir.
+——İnternet Satış Bilgisi —
+Web Adresi: www.boyner.com.tr - (Boyner Now)
+Sipariş Tarihi:2024-06-24
+Ödeme Notu: Akbank Tek Ö Tutar: 1599.24
+Yalnız BİNBEŞYÜZDOKSANDOKUZ TL YİRMİDÖRT Kr.
+İADE BÖLÜMÜ
+İade Eden Adı Jade Eden Soyadı Malın Cinsi | Miktar | BirimFiyat | Tar [Adres | im |
+Bu Ürün(ler) usulunce iade edilir/değiştirilir ise Hopi Programı'ndan Ürünler için kazanılan Paracık
+tutarları müşteriden geri alınır. Müşteri'nin başka yeterli Paracık'ı yoksa iade olunacak satış bedelinden
+nakden (IMF vb.düzenlenmişse tutarından) indirilerek alınır. Haksız kazanılan/kullanılan tüm Paracıklar-
+ilgili ürünler için de aynı işlem yapılır.
+
+=== OPENAI ANALYSIS ===
+==================================================
+{
+    "type": "invoice",
+    "language": "Turkish",
+    "currency": "TRY",
+    "vendor": "Boyner Büyük Mağazacılık A.Ş.",
+    "customer": "Cicek",
+    "date": "2024-06-25",
+    "amount": 1599.24,
+    "tax": 153.96,
+    "category": "Clothing",
+    "paid": true
+}
+
+=== OPENAI TOKEN USAGE ===
+==================================================
+Model: gpt-3.5-turbo-0125
+Prompt Tokens: 1004
+Completion Tokens: 99
+Total Tokens: 1103

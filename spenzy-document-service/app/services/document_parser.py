@@ -4,13 +4,17 @@ import pytesseract
 from openai import OpenAI
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
+from app.services.category_client import CategoryClient
 
 # Load environment variables
 load_dotenv()
 
 # Configure OpenAI API key
 OpenAI.api_key = os.getenv('OPENAI_API_KEY')
-client = OpenAI();
+client = OpenAI()
+
+# Initialize category client
+category_client = CategoryClient()
 
 # Configure directories
 DATA_DIR = "datas"
@@ -84,24 +88,28 @@ def perform_ocr(file_path):
         print(f"Error processing file: {str(e)}")
         return None
 
-def process_with_openai(text):
+def process_with_openai(text, context=None):
     """
     Send the extracted text to OpenAI API for processing.
     OpenAI can automatically detect and handle multiple languages.
     Returns a tuple of (analysis_json, usage_data)
     """
     try:
+        # Get available categories
+        categories = category_client.get_categories(context)
+        categories_str = ", ".join(categories)
+
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": """extract information from invoice data.
+                {"role": "system", "content": f"""extract information from invoice data.
                  answer these questions in json format.
                  Type of document (invoice,bill or receipt) as type.n/a if none of them.
                  language of document as language,currency as currency,vendor name as vendor,customer name as customer,
-                 invoice date as date,due amount as amount,total tax as tax and category. 
-                 categories are Groceries,Restaurants,Electricity,Communication,Water,Gas/Fuel,
-                 Clothing,Medical/Healthcare,Houshold Item/Supplies, Personal, Education,
-                 Entertainment and Others"""},
+                 invoice date as date,due amount as amount,total tax as tax,payment status as paid (true/false) and category as category. 
+                 categories are {categories_str}.
+                 For paid status, look for words like 'paid', 'payment received', 'completed', 'settled', 'ödendi', 'tahsil edildi'
+                 or any payment date/receipt information. If it's a receipt, always set paid to true."""},
                 {"role": "user", "content": text}
             ],
             response_format={
@@ -121,6 +129,38 @@ def process_with_openai(text):
     except Exception as e:
         print(f"Error processing with OpenAI: {str(e)}")
         return None, None
+
+def process_document(file_path, context=None):
+    """
+    Process a document from a file path.
+    Returns a tuple of (ai_response, error_message).
+    """
+    try:
+        # Perform OCR
+        text = perform_ocr(file_path)
+        if not text:
+            return None, "Failed to extract text from document"
+
+        # Process with OpenAI
+        ai_response, usage_data = process_with_openai(text, context)
+        if not ai_response:
+            return None, "Failed to process text with OpenAI"
+
+        # Get the original file name for saving results
+        file_name = os.path.basename(file_path)
+        
+        # Save results if needed
+        try:
+            save_ocr_result(file_name, text, ai_response, usage_data)
+        except Exception as e:
+            print(f"Warning: Failed to save OCR result: {e}")
+            # Continue even if saving fails
+
+        return ai_response, None
+
+    except Exception as e:
+        print(f"Error processing document: {str(e)}")
+        return None, f"Error processing document: {str(e)}"
 
 def save_ocr_result(file_name, text, ai_response, usage_data=None):
     """

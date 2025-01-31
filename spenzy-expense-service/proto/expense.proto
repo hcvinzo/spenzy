@@ -13,22 +13,81 @@ service ExpenseService {
   rpc ListExpenses (ListExpensesRequest) returns (ListExpensesResponse) {}
 }
 
+service CategoryService {
+  // Category CRUD operations
+  rpc CreateCategory (CreateCategoryRequest) returns (CategoryResponse) {}
+  rpc GetCategory (GetCategoryRequest) returns (CategoryResponse) {}
+  rpc UpdateCategory (UpdateCategoryRequest) returns (CategoryResponse) {}
+  rpc DeleteCategory (DeleteCategoryRequest) returns (DeleteCategoryResponse) {}
+  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse) {}
+}
+
+message Category {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string created_by = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  string updated_by = 7;
+}
+
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+}
+
+message GetCategoryRequest {
+  int32 category_id = 1;
+}
+
+message UpdateCategoryRequest {
+  int32 category_id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message DeleteCategoryRequest {
+  int32 category_id = 1;
+}
+
+message CategoryResponse {
+  Category category = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message ListCategoriesRequest {
+  // Empty request as we'll list all categories
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message DeleteCategoryResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
 message Expense {
   int32 id = 1;
-  google.protobuf.Timestamp expense_date = 2;
-  string vendor_name = 3;
-  double total_amount = 4;
-  double total_tax = 5;
-  string category = 6;
-  string currency = 7;
-  bool is_paid = 8;
-  google.protobuf.Timestamp paid_on = 9;
-  
-  // Audit fields
-  google.protobuf.Timestamp created_on = 10;
-  string created_by = 11;
-  google.protobuf.Timestamp updated_on = 12;
-  string updated_by = 13;
+  string user_id = 2;
+  google.protobuf.Timestamp expense_date = 3;
+  string vendor_name = 4;
+  double total_amount = 5;
+  double total_tax = 6;
+  int32 category_id = 7;
+  Category category = 8;
+  string currency = 9;
+  bool is_paid = 10;
+  google.protobuf.Timestamp paid_on = 11;
+  google.protobuf.Timestamp created_at = 12;
+  string created_by = 13;
+  google.protobuf.Timestamp updated_at = 14;
+  string updated_by = 15;
 }
 
 message CreateExpenseRequest {
@@ -36,7 +95,7 @@ message CreateExpenseRequest {
   string vendor_name = 2;
   double total_amount = 3;
   double total_tax = 4;
-  string category = 5;
+  int32 category_id = 5;
   string currency = 6;
   bool is_paid = 7;
   google.protobuf.Timestamp paid_on = 8;
@@ -52,7 +111,7 @@ message UpdateExpenseRequest {
   string vendor_name = 3;
   double total_amount = 4;
   double total_tax = 5;
-  string category = 6;
+  int32 category_id = 6;
   string currency = 7;
   bool is_paid = 8;
   google.protobuf.Timestamp paid_on = 9;

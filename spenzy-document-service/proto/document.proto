@@ -26,6 +26,7 @@ message ParseDocumentResponse {
   string raw_text = 10;  // OCR extracted text
   bool success = 11;
   string error_message = 12;
+  bool is_paid = 13;  // Whether the document is marked as paid
 }
 
 message GetDocumentRequest {
@@ -52,4 +53,5 @@ message ParseDocumentTextResponse {
   string category = 9;
   bool success = 10;
   string error_message = 11;
+  bool is_paid = 12;  // Whether the document is marked as paid
 } 

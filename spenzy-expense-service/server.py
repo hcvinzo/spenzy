@@ -4,7 +4,8 @@ import grpc
 from concurrent import futures
 from grpc_reflection.v1alpha import reflection
 from proto import expense_pb2, expense_pb2_grpc
-from app.grpc_services.expense_service import ExpenseService
+from app.grpc_services.expense_service import ExpenseServicer
+from app.grpc_services.category_service import CategoryServicer
 from spenzy_common.middleware.auth_interceptor import AuthInterceptor
 from app.grpc_services.auth_service import AuthService
 from proto import auth_pb2, auth_pb2_grpc
@@ -36,8 +37,12 @@ def serve():
     )
 
     # Add the expense service
-    expense_service = ExpenseService()
+    expense_service = ExpenseServicer()
     expense_pb2_grpc.add_ExpenseServiceServicer_to_server(expense_service, server)
+
+    # Add the category service
+    category_service = CategoryServicer()
+    expense_pb2_grpc.add_CategoryServiceServicer_to_server(category_service, server)
 
     # Add the auth service
     auth_service = AuthService()
@@ -46,6 +51,7 @@ def serve():
     # Enable reflection
     SERVICE_NAMES = (
         expense_pb2.DESCRIPTOR.services_by_name['ExpenseService'].full_name,
+        expense_pb2.DESCRIPTOR.services_by_name['CategoryService'].full_name,
         auth_pb2.DESCRIPTOR.services_by_name['AuthService'].full_name,
         reflection.SERVICE_NAME,
     )

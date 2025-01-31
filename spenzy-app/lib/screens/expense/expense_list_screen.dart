@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spenzy/generated/expense.pb.dart';
-import 'package:spenzy/services/expense_service.dart';
-import 'package:spenzy/screens/expense/add_expense_screen.dart';
+import 'package:spenzy_app/generated/proto/expense/expense.pb.dart';
+import 'package:spenzy_app/services/expense_service.dart';
+import 'package:spenzy_app/screens/expense/add_expense_screen.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseListScreen extends StatefulWidget {
@@ -111,7 +111,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(DateFormat('MMM dd, yyyy').format(expense.expenseDate.toDateTime())),
-                    Text(expense.category),
+                    Text(expense.category?.name ?? ''),
                   ],
                 ),
                 trailing: Column(

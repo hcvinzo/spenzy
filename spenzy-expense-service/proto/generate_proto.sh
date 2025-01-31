@@ -5,13 +5,14 @@ set -e
 
 # Set paths
 FLUTTER_APP_PATH="../../spenzy-app"
+DOCUMENT_SERVICE_PATH="../../spenzy-document-service"
 PROTO_OUT_DIR="$FLUTTER_APP_PATH/lib/generated/proto"
 
 # Create necessary directories
 mkdir -p "$PROTO_OUT_DIR/expense"
 mkdir -p "$PROTO_OUT_DIR/google/protobuf"
 
-echo "Generating Python gRPC code..."
+echo "Generating Python gRPC code for expense service..."
 python -m grpc_tools.protoc \
     -I. \
     -I/usr/local/include \
@@ -24,7 +25,27 @@ python -m grpc_tools.protoc \
 sed -i '' 's/import expense_pb2/from . import expense_pb2/' expense_pb2_grpc.py
 sed -i '' 's/import auth_pb2/from . import auth_pb2/' auth_pb2_grpc.py
 
-echo "Python gRPC code generated successfully."
+echo "Python gRPC code generated successfully for expense service."
+
+# Generate Python gRPC code for document service if it exists
+if [ -d "$DOCUMENT_SERVICE_PATH" ]; then
+    echo "Generating Python gRPC code for document service..."
+    mkdir -p "$DOCUMENT_SERVICE_PATH/proto"
+    python -m grpc_tools.protoc \
+        -I. \
+        -I/usr/local/include \
+        --python_out="$DOCUMENT_SERVICE_PATH/proto" \
+        --grpc_python_out="$DOCUMENT_SERVICE_PATH/proto" \
+        expense.proto
+
+    # Fix imports in generated files for document service
+    if [ -f "$DOCUMENT_SERVICE_PATH/proto/expense_pb2_grpc.py" ]; then
+        sed -i '' 's/import expense_pb2/from . import expense_pb2/' "$DOCUMENT_SERVICE_PATH/proto/expense_pb2_grpc.py"
+    fi
+    echo "Python gRPC code generated successfully for document service."
+else
+    echo "Document service directory not found at $DOCUMENT_SERVICE_PATH, skipping..."
+fi
 
 # Check if Flutter app directory exists
 if [ ! -d "$FLUTTER_APP_PATH" ]; then
@@ -62,5 +83,9 @@ done
 echo "Setting file permissions..."
 chmod 644 "$PROTO_OUT_DIR/expense/"*
 chmod 644 "$PROTO_OUT_DIR/google/protobuf/"*
+
+if [ -d "$DOCUMENT_SERVICE_PATH" ]; then
+    chmod 644 "$DOCUMENT_SERVICE_PATH/proto/"*pb2*.py
+fi
 
 echo "All proto files generated successfully!" 

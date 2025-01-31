@@ -119,31 +119,28 @@ class AuthService {
   Future<void> login(BuildContext context, {bool isRegister = false}) async {
     try {
       final credentials = await _authenticate();
-      await _storage.write(key: tokenKey, value: credentials.accessToken);
-      await _storage.write(key: refreshTokenKey, value: credentials.refreshToken);
 
-      // Exchange tokens for services
-      if (credentials.accessToken != null) {
-        final documentToken = await _serviceAuth.exchangeToken(
-          credentials.accessToken!,
-          'spenzy-document.service'
-        );
-        final expenseToken = await _serviceAuth.exchangeToken(
-          credentials.accessToken!,
-          'spenzy-expense.service'
-        );
-      }
-
-      // Show the WebView
+      // Show the WebView for login
       if (context.mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => KeycloakWebView(
-              initialUrl: getAccountUrl(),
+              initialUrl: credentials.authUrl,
               onAuthCallback: (callbackUri) async {
                 final success = await handleAuthCallback(callbackUri);
                 if (success && context.mounted) {
-                  Navigator.of(context).pop(); // Close WebView
+                  // After successful login, exchange tokens for services
+                  final token = await getToken();
+                  if (token != null) {
+                    await _serviceAuth.exchangeToken(token, 'spenzy-document.service');
+                    await _serviceAuth.exchangeToken(token, 'spenzy-expense.service');
+                  }
+                  
+                  // Close WebView and navigate to home screen
+                  if (context.mounted) {
+                    Navigator.of(context).pop(); // Close WebView
+                    Navigator.of(context).pushReplacementNamed('/home'); // Navigate to home screen
+                  }
                 }
               },
             ),
