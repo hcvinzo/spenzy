@@ -27,6 +27,7 @@ message ParseDocumentResponse {
   bool success = 11;
   string error_message = 12;
   bool is_paid = 13;  // Whether the document is marked as paid
+  string due_date = 14;  // Due date of the document (YYYY-MM-DD)
 }
 
 message GetDocumentRequest {
@@ -54,4 +55,5 @@ message ParseDocumentTextResponse {
   bool success = 10;
   string error_message = 11;
   bool is_paid = 12;  // Whether the document is marked as paid
+  string due_date = 13;  // Due date of the document (YYYY-MM-DD)
 } 

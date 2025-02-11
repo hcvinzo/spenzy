@@ -7,6 +7,7 @@ import 'package:spenzy_app/screens/expense/add_expense_screen.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:spenzy_app/utils/document_picker.dart';
+import 'package:spenzy_app/screens/expense/expense_detail_screen.dart';
 
 class HomeContentScreen extends StatefulWidget {
   const HomeContentScreen({super.key});
@@ -126,6 +127,18 @@ class _HomeContentScreenState extends State<HomeContentScreen> {
         '${expense.currency} ${expense.totalAmount.toStringAsFixed(2)}',
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ExpenseDetailScreen(expense: expense),
+          ),
+        );
+        
+        if (result == true) {
+          _loadData();
+        }
+      },
     );
   }
 

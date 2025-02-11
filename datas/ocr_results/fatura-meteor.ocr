@@ -70,16 +70,16 @@ www.pazarfili.com RZ
     "currency": "TL",
     "vendor": "Meteor Endüstri ve Enerji Anonim Şirketi",
     "customer": "HAKAN ÇİÇEK",
-    "date": "15-12-2024",
-    "amount": "997,50",
-    "tax": "166,25",
-    "category": "Gas/Fuel",
-    "paid": true
+    "date": "2024-12-15",
+    "amount": 997.50,
+    "tax": 166.25,
+    "category": "Utilities",
+    "paid": false
 }
 
 === OPENAI TOKEN USAGE ===
 ==================================================
 Model: gpt-3.5-turbo-0125
-Prompt Tokens: 1346
-Completion Tokens: 103
-Total Tokens: 1449
+Prompt Tokens: 2483
+Completion Tokens: 101
+Total Tokens: 2584

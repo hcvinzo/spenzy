@@ -6,7 +6,7 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
     def __init__(self):
         self.keycloak_auth = KeycloakAuthService()
 
-    def Authenticate(self, request, context):
+    async def Authenticate(self, request, context):
         try:
             result = self.keycloak_auth.authenticate(
                 username=request.username,
@@ -22,9 +22,9 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
         except Exception as e:
             context.abort(grpc.StatusCode.INTERNAL, f"Authentication failed: {str(e)}")
 
-    def RefreshToken(self, request, context):
+    async def RefreshToken(self, request, context):
         try:
-            result = self.keycloak_auth.refresh_token(
+            result = await self.keycloak_auth.refresh_token(
                 refresh_token=request.refresh_token
             )
             return auth_pb2.AuthResponse(
@@ -37,9 +37,9 @@ class AuthService(auth_pb2_grpc.AuthServiceServicer):
         except Exception as e:
             context.abort(grpc.StatusCode.INTERNAL, f"Token refresh failed: {str(e)}")
 
-    def ExchangeToken(self, request, context):
+    async def ExchangeToken(self, request, context):
         try:
-            result = self.keycloak_auth.exchange_token(
+            result = await self.keycloak_auth.exchange_token(
                 token=request.token
             )
             return auth_pb2.AuthResponse(

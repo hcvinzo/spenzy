@@ -5,6 +5,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
 from app.services.category_client import CategoryClient
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +25,8 @@ OCR_DIR = os.path.join(DATA_DIR, "ocr_results")
 # eng (English), tur (Turkish), fra (French), deu (German), spa (Spanish), 
 # ara (Arabic), rus (Russian), chi_sim (Simplified Chinese), jpn (Japanese)
 OCR_LANGUAGES = 'eng+tur+fra+deu+spa+ara+rus+chi_sim+jpn'
+
+logger = logging.getLogger(__name__)
 
 def convert_pdf_to_images(pdf_path):
     """
@@ -88,28 +91,49 @@ def perform_ocr(file_path):
         print(f"Error processing file: {str(e)}")
         return None
 
-def process_with_openai(text, context=None):
-    """
-    Send the extracted text to OpenAI API for processing.
-    OpenAI can automatically detect and handle multiple languages.
-    Returns a tuple of (analysis_json, usage_data)
-    """
+async def get_categories():
+    """Get categories from the expense service."""
     try:
-        # Get available categories
-        categories = category_client.get_categories(context)
-        categories_str = ", ".join(categories)
+        client = CategoryClient()
+        categories = await client.get_categories()
+        client.close()
+        return categories
+    except Exception as e:
+        logger.error(f"Error getting categories: {e}")
+        return []
+
+async def process_with_openai(text, context):
+    """Process document text with OpenAI."""
+    try:
+        # Get categories for the prompt
+        categories = await get_categories()
+        category_list = ", ".join(categories)
+        
+        # Build the prompt with available categories
+        prompt = f"""Analyze this document text and extract the following information in json format:
+        - type (invoice, receipt, or bill)
+        - language
+        - currency
+        - Vendor name as vendor
+        - Customer name (if present) as customer
+        - document/invoice date (YYYY-MM-DD) as date
+        - due date (YYYY-MM-DD) as due_date
+        - Total amount (due amount) as amount
+        - Tax amount as tax
+        - Category (must be one of: {category_list}) as category
+        - Whether it's marked as paid as paid
+
+        Document text:
+        {text}
+
+        Return the analysis as a JSON object with these fields:
+        type, language, currency, vendor, customer, date (YYYY-MM-DD), amount, tax, category, paid
+        """
 
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": f"""extract information from invoice data.
-                 answer these questions in json format.
-                 Type of document (invoice,bill or receipt) as type.n/a if none of them.
-                 language of document as language,currency as currency,vendor name as vendor,customer name as customer,
-                 invoice date as date,due amount as amount,total tax as tax,payment status as paid (true/false) and category as category. 
-                 categories are {categories_str}.
-                 For paid status, look for words like 'paid', 'payment received', 'completed', 'settled', 'ödendi', 'tahsil edildi'
-                 or any payment date/receipt information. If it's a receipt, always set paid to true."""},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": text}
             ],
             response_format={
@@ -126,8 +150,9 @@ def process_with_openai(text, context=None):
         }
         
         return response.choices[0].message.content, usage_data
+        
     except Exception as e:
-        print(f"Error processing with OpenAI: {str(e)}")
+        logger.error(f"Error processing with OpenAI: {e}")
         return None, None
 
 def process_document(file_path, context=None):

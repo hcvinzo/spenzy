@@ -78,7 +78,7 @@ class ExpenseService {
     }
   }
 
-  Future<expense.Expense> updateExpense(expense.UpdateExpenseRequest request) async {
+  Future<expense.ExpenseResponse> updateExpense(expense.UpdateExpenseRequest request) async {
     try {
       final token = await _serviceAuth.getServiceToken('spenzy-expense.service');
       if (token == null) throw Exception('Not authenticated');
@@ -89,7 +89,7 @@ class ExpenseService {
           'authorization': 'Bearer $token',
         }),
       );
-      return response.expense;
+      return response;
     } catch (e) {
       throw Exception('Failed to update expense: $e');
     }

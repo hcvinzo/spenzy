@@ -1,4 +1,5 @@
 import os
+import httpx
 from keycloak import KeycloakOpenID
 from keycloak.exceptions import KeycloakError
 
@@ -21,9 +22,31 @@ class KeycloakHandler:
                 "\n-----END PUBLIC KEY-----"
         return self._public_key
 
-    def verify_token(self, token: str):
+    async def get_client_credentials_token(self, client_id: str, client_secret: str) -> dict:
+        """Get token using client credentials flow."""
+        try:
+            params = {
+                'grant_type': 'client_credentials',
+                'client_id': client_id,
+                'client_secret': client_secret
+            }
+            
+            url = f"{os.getenv('KEYCLOAK_URL')}/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/token"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, data=params)
+                result = response.json()
+                
+            if 'error' in result:
+                raise KeycloakError(f"Client credentials token failed: {result.get('error_description', result['error'])}")
+                
+            return result
+        except Exception as e:
+            raise ValueError(f"Client credentials token failed: {str(e)}")
+
+    async def verify_token(self, token: str):
         """Verify token and return claims"""
         try:
+            # Token decoding is CPU-bound, no need for async
             token_info = self.keycloak_openid.decode_token(
                 token,
                 key=self.public_key,
@@ -38,7 +61,7 @@ class KeycloakHandler:
         except Exception as e:
             raise ValueError(f"Token verification failed: {str(e)}")
 
-    def exchange_token(self, token: str):
+    async def exchange_token(self, token: str):
         """Exchange token from mobile app to service token"""
         try:
             exchange_params = {
@@ -52,10 +75,10 @@ class KeycloakHandler:
                 'scope': 'openid'
             }
             
-            result = self.keycloak_openid.connection.raw_post(
-                path=f"/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/token",
-                data=exchange_params
-            ).json()
+            url = f"{os.getenv('KEYCLOAK_URL')}/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/token"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, data=exchange_params)
+                result = response.json()
             
             if 'error' in result:
                 raise KeycloakError(f"Token exchange failed: {result.get('error_description', result['error'])}")
@@ -64,9 +87,18 @@ class KeycloakHandler:
         except Exception as e:
             raise ValueError(f"Token exchange failed: {str(e)}")
 
-    def introspect_token(self, token: str):
+    async def introspect_token(self, token: str):
         """Introspect token to check if it's still valid"""
         try:
-            return self.keycloak_openid.introspect(token)
-        except KeycloakError as e:
+            params = {
+                'token': token,
+                'client_id': os.getenv('KEYCLOAK_CLIENT_ID'),
+                'client_secret': os.getenv('KEYCLOAK_CLIENT_SECRET')
+            }
+            
+            url = f"{os.getenv('KEYCLOAK_URL')}/realms/{os.getenv('KEYCLOAK_REALM')}/protocol/openid-connect/token/introspect"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, data=params)
+                return response.json()
+        except Exception as e:
             raise ValueError(f"Token introspection failed: {str(e)}") 

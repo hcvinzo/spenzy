@@ -110,19 +110,19 @@ blob:https://online.enerjisa.com.tr/95d3b220-c206-49f0-bce9-231ba157289a Page 2 
 {
     "type": "invoice",
     "language": "Turkish",
-    "currency": "TRY",
+    "currency": "TL",
     "vendor": "ENERJISA",
     "customer": "ÇİÇEKAPARTMAN YÖNETİMİ",
     "date": "2024-10-04",
     "amount": 238.60,
     "tax": 24.53,
-    "category": "Electricity",
-    "paid": false
+    "category": "Utilities",
+    "paid": true
 }
 
 === OPENAI TOKEN USAGE ===
 ==================================================
 Model: gpt-3.5-turbo-0125
-Prompt Tokens: 3152
-Completion Tokens: 97
-Total Tokens: 3249
+Prompt Tokens: 6095
+Completion Tokens: 96
+Total Tokens: 6191

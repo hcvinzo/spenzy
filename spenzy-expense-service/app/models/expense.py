@@ -1,8 +1,12 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 class CategoryInfo(BaseModel):
+    id: int
+    name: str
+
+class TagInfo(BaseModel):
     id: int
     name: str
 
@@ -18,8 +22,10 @@ class Expense(BaseModel):
     currency: str
     is_paid: bool
     paid_on: Optional[datetime] = None
+    due_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    tags: List[TagInfo] = []
 
 class ExpenseCreate(BaseModel):
     expense_date: datetime
@@ -30,6 +36,8 @@ class ExpenseCreate(BaseModel):
     currency: str
     is_paid: bool
     paid_on: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    tag_ids: List[int] = []
 
 class ExpenseUpdate(BaseModel):
     expense_date: Optional[datetime] = None
@@ -39,4 +47,6 @@ class ExpenseUpdate(BaseModel):
     category_id: Optional[int] = None
     currency: Optional[str] = None
     is_paid: Optional[bool] = None
-    paid_on: Optional[datetime] = None 
+    paid_on: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    tag_ids: Optional[List[int]] = None 

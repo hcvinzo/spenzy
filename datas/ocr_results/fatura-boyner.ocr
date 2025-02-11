@@ -48,19 +48,19 @@ ilgili ürünler için de aynı işlem yapılır.
 {
     "type": "invoice",
     "language": "Turkish",
-    "currency": "TRY",
+    "currency": "TL",
     "vendor": "Boyner Büyük Mağazacılık A.Ş.",
-    "customer": "Cicek",
+    "customer": null,
     "date": "2024-06-25",
     "amount": 1599.24,
     "tax": 153.96,
     "category": "Clothing",
-    "paid": true
+    "paid": false
 }
 
 === OPENAI TOKEN USAGE ===
 ==================================================
 Model: gpt-3.5-turbo-0125
-Prompt Tokens: 1004
-Completion Tokens: 99
-Total Tokens: 1103
+Prompt Tokens: 1787
+Completion Tokens: 96
+Total Tokens: 1883

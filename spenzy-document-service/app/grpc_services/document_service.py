@@ -5,10 +5,12 @@ import tempfile
 import os
 import base64
 import magic
+import asyncio
 from proto import document_pb2
 from proto import document_pb2_grpc
 from spenzy_common.middleware.auth_interceptor import AuthInterceptor
 from app.services.document_parser import perform_ocr, process_with_openai, save_ocr_result, process_document
+from spenzy_common.utils.token_utils import get_user_id_from_context
 
 CHUNK_SIZE = 1024 * 1024  # 1MB chunks for file streaming
 
@@ -17,12 +19,18 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
     Service for processing and analyzing documents using OCR and AI.
     """
     
-    def ParseDocument(self, request, context):
+    def __init__(self):
+        pass
+
+    async def ParseDocument(self, request, context):
         """
         Process and analyze a document file.
         """
         temp_file_path = None
         try:
+            # Extract user ID from context
+            user_id = get_user_id_from_context(context)
+            
             # Detect file type from content
             file_content = request.file_content
             try:
@@ -46,8 +54,8 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
                     error_message="Failed to extract text from document"
                 )
 
-            # Then process with OpenAI, passing the context
-            ai_response, usage_data = process_with_openai(text, context)
+            # Then process with OpenAI
+            ai_response, usage_data = await process_with_openai(text, context)
             if not ai_response:
                 return document_pb2.ParseDocumentResponse(
                     success=False,
@@ -59,7 +67,6 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
                 save_ocr_result(request.file_name, text, ai_response, usage_data)
             except Exception as e:
                 logging.warning(f"Failed to save OCR result: {e}")
-                # Continue even if saving fails
 
             # Parse AI response
             try:
@@ -70,7 +77,7 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
                     error_message=f"Failed to parse AI response: {str(e)}"
                 )
 
-            # Create response
+            # Create response with extracted data
             return document_pb2.ParseDocumentResponse(
                 document_type=analysis_dict.get('type', 'n/a'),
                 language=analysis_dict.get('language', ''),
@@ -78,15 +85,15 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
                 vendor_name=analysis_dict.get('vendor', ''),
                 customer_name=analysis_dict.get('customer', ''),
                 invoice_date=analysis_dict.get('date', ''),
+                due_date=analysis_dict.get('due_date', ''),
                 due_amount=str(analysis_dict.get('amount', '')),
                 total_tax=str(analysis_dict.get('tax', '')),
                 category=analysis_dict.get('category', ''),
-                raw_text=text,  # Use the OCR text here
+                raw_text=text,
                 is_paid=analysis_dict.get('paid', False),
                 success=True,
                 error_message=''
             )
-
         except Exception as e:
             logging.error(f"Error in ParseDocument: {str(e)}")
             return document_pb2.ParseDocumentResponse(
@@ -161,6 +168,7 @@ class DocumentService(document_pb2_grpc.DocumentServiceServicer):
                 vendor_name=analysis_dict.get('vendor', ''),
                 customer_name=analysis_dict.get('customer', ''),
                 invoice_date=analysis_dict.get('date', ''),
+                due_date=analysis_dict.get('due_date', ''),
                 due_amount=analysis_dict.get('amount', ''),
                 total_tax=analysis_dict.get('tax', ''),
                 category=analysis_dict.get('category', ''),

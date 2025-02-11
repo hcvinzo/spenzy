@@ -1,5 +1,7 @@
 import os
 import grpc
+import asyncio
+import signal
 from concurrent import futures
 from dotenv import load_dotenv
 from proto import document_pb2
@@ -12,7 +14,7 @@ from proto import auth_pb2, auth_pb2_grpc
 # Load environment variables
 load_dotenv()
 
-def serve():
+async def serve():
     # Define methods that don't require authentication
     excluded_methods = [
         '/auth.AuthService/Authenticate',  # Allow authentication without token
@@ -22,8 +24,7 @@ def serve():
     ]
 
     # Create gRPC server
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=10),
+    server = grpc.aio.server(
         interceptors=[AuthInterceptor(excluded_methods=excluded_methods)],
         options=[
             ('grpc.max_send_message_length', 50 * 1024 * 1024),  # 50MB
@@ -46,10 +47,32 @@ def serve():
 
     # Start server
     port = os.getenv('GRPC_PORT', '50051')
-    server.add_insecure_port(f'[::]:{port}')
-    server.start()
+    listen_addr = f'[::]:{port}'
+    server.add_insecure_port(listen_addr)
+    await server.start()
     print(f'Server started on port {port}')
-    server.wait_for_termination()
+
+    # Handle shutdown gracefully
+    shutdown_event = asyncio.Event()
+
+    def signal_handler():
+        print("\nReceived shutdown signal")
+        shutdown_event.set()
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop = asyncio.get_running_loop()
+        loop.add_signal_handler(sig, signal_handler)
+    
+    try:
+        await shutdown_event.wait()
+    finally:
+        print("\nShutting down server...")
+        # Shutdown the gRPC server
+        await server.stop(5)  # 5 seconds grace period
+        print("Server shutdown complete")
 
 if __name__ == '__main__':
-    serve()
+    try:
+        asyncio.run(serve())
+    except KeyboardInterrupt:
+        print("\nShutdown complete")

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'services/auth_service.dart';
 import 'widgets/auth_wrapper.dart';
 
@@ -31,12 +32,14 @@ class MyApp extends StatelessWidget {
 
         // Handle other routes
         switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => const WelcomeScreen());
           case '/home':
             return MaterialPageRoute(builder: (_) => const HomeScreen());
           case '/profile':
             return MaterialPageRoute(builder: (_) => const ProfileScreen());
           default:
-            return null;
+            return MaterialPageRoute(builder: (_) => const WelcomeScreen());
         }
       },
     );
@@ -67,17 +70,23 @@ class _CallbackHandlerState extends State<CallbackHandler> {
       final authService = AuthService();
       final success = await authService.handleAuthCallback(widget.uri);
       
-      if (mounted && success) {
-        Navigator.of(context).pushReplacementNamed('/home');
+      if (mounted) {
+        if (success) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Authentication failed')),
+          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Authentication failed: $e')),
         );
-        // Instead of navigating to login screen, trigger Keycloak login
-        final authService = AuthService();
-        await authService.login(context);
+        // Navigate back to welcome screen instead of triggering login again
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     }
   }

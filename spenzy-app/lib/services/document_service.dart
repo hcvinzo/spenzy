@@ -20,6 +20,7 @@ class DocumentResponse {
   final bool success;
   final String errorMessage;
   final bool isPaid;
+  final String dueDate;
 
   DocumentResponse({
     required this.documentType,
@@ -35,6 +36,7 @@ class DocumentResponse {
     required this.success,
     required this.errorMessage,
     required this.isPaid,
+    required this.dueDate,
   });
 
   // Helper methods to convert string amounts to numbers
@@ -57,6 +59,7 @@ class DocumentResponse {
         success: response.success,
         errorMessage: response.errorMessage,
         isPaid: response.isPaid,
+        dueDate: response.dueDate,
       );
     } else if (response is document.ParseDocumentTextResponse) {
       return DocumentResponse(
@@ -73,6 +76,7 @@ class DocumentResponse {
         success: response.success,
         errorMessage: response.errorMessage,
         isPaid: response.isPaid,
+        dueDate: response.dueDate,
       );
     } else {
       throw ArgumentError('Unsupported response type: ${response.runtimeType}');

@@ -13,6 +13,12 @@ service ExpenseService {
   rpc ListExpenses (ListExpensesRequest) returns (ListExpensesResponse) {}
 }
 
+service TagService {
+  rpc ListTags (ListTagsRequest) returns (ListTagsResponse) {}
+  rpc CreateTag (CreateTagRequest) returns (TagResponse) {}
+  rpc DeleteTag (DeleteTagRequest) returns (DeleteTagResponse) {}
+}
+
 service CategoryService {
   // Category CRUD operations
   rpc CreateCategory (CreateCategoryRequest) returns (CategoryResponse) {}
@@ -72,6 +78,15 @@ message DeleteCategoryResponse {
   string error_message = 2;
 }
 
+message Tag {
+  int32 id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  string created_by = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  string updated_by = 6;
+}
+
 message Expense {
   int32 id = 1;
   string user_id = 2;
@@ -88,6 +103,8 @@ message Expense {
   string created_by = 13;
   google.protobuf.Timestamp updated_at = 14;
   string updated_by = 15;
+  repeated Tag tags = 16;  // List of tags associated with the expense
+  google.protobuf.Timestamp due_date = 17;  // Due date for the expense
 }
 
 message CreateExpenseRequest {
@@ -99,6 +116,8 @@ message CreateExpenseRequest {
   string currency = 6;
   bool is_paid = 7;
   google.protobuf.Timestamp paid_on = 8;
+  repeated int32 tag_ids = 9;  // List of tag IDs to associate with the expense
+  google.protobuf.Timestamp due_date = 10;  // Due date for the expense
 }
 
 message GetExpenseRequest {
@@ -108,13 +127,15 @@ message GetExpenseRequest {
 message UpdateExpenseRequest {
   int32 id = 1;
   google.protobuf.Timestamp expense_date = 2;
-  string vendor_name = 3;
-  double total_amount = 4;
-  double total_tax = 5;
-  int32 category_id = 6;
-  string currency = 7;
-  bool is_paid = 8;
-  google.protobuf.Timestamp paid_on = 9;
+  optional string vendor_name = 3;
+  optional double total_amount = 4;
+  optional double total_tax = 5;
+  optional int32 category_id = 6;
+  optional string currency = 7;
+  optional bool is_paid = 8;
+  optional google.protobuf.Timestamp paid_on = 9;
+  repeated int32 tag_ids = 10;  // List of tag IDs to associate with the expense
+  optional google.protobuf.Timestamp due_date = 11;  // Due date for the expense
 }
 
 message DeleteExpenseRequest {
@@ -145,4 +166,33 @@ message ListExpensesResponse {
   int32 total_count = 2;
   bool success = 3;
   string error_message = 4;
+}
+
+message ListTagsRequest {
+  string query = 1;  // Optional search query
+}
+
+message ListTagsResponse {
+  repeated Tag tags = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message CreateTagRequest {
+  string name = 1;
+}
+
+message TagResponse {
+  Tag tag = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message DeleteTagRequest {
+  int32 tag_id = 1;
+}
+
+message DeleteTagResponse {
+  bool success = 1;
+  string error_message = 2;
 } 

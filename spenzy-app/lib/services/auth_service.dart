@@ -117,38 +117,118 @@ class AuthService {
   }
 
   Future<void> login(BuildContext context, {bool isRegister = false}) async {
-    try {
-      final credentials = await _authenticate();
+    String? errorMessage;
+    bool loginSuccess = false;
 
-      // Show the WebView for login
-      if (context.mounted) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => KeycloakWebView(
-              initialUrl: credentials.authUrl,
-              onAuthCallback: (callbackUri) async {
+    try {
+      // Clear any existing tokens before starting new login
+      await logout();
+
+      // Get login credentials
+      final credentials = await _authenticate();
+      if (credentials == null) {
+        throw Exception('Failed to get login credentials');
+      }
+
+      // Show the WebView in a dialog
+      if (!context.mounted) return;
+      
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: KeycloakWebView(
+            initialUrl: credentials.authUrl,
+            onError: (error) async {
+              // Ensure we're logged out on error
+              await logout();
+              errorMessage = error;
+              if (context.mounted) {
+                Navigator.of(context).pop(); // Close the dialog
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error)),
+                    );
+                  }
+                });
+              }
+            },
+            onAuthCallback: (callbackUri) async {
+              try {
                 final success = await handleAuthCallback(callbackUri);
-                if (success && context.mounted) {
+                if (success) {
                   // After successful login, exchange tokens for services
                   final token = await getToken();
                   if (token != null) {
-                    await _serviceAuth.exchangeToken(token, 'spenzy-document.service');
-                    await _serviceAuth.exchangeToken(token, 'spenzy-expense.service');
+                    try {
+                      // Exchange tokens for both services
+                      await Future.wait([
+                        _serviceAuth.exchangeToken(token, 'spenzy-document.service'),
+                        _serviceAuth.exchangeToken(token, 'spenzy-expense.service'),
+                      ]);
+                      loginSuccess = true;
+                      
+                      // Navigate to home screen on success
+                      if (context.mounted) {
+                        Navigator.of(context).pop(); // Close WebView
+                        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                      }
+                    } catch (e) {
+                      await logout();
+                      errorMessage = 'Service token exchange failed: ${e.toString()}';
+                      if (context.mounted) {
+                        Navigator.of(context).pop(); // Close WebView
+                        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(errorMessage!)),
+                        );
+                      }
+                    }
+                  } else {
+                    errorMessage = 'Failed to get authentication token';
+                    if (context.mounted) {
+                      Navigator.of(context).pop(); // Close WebView
+                      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(errorMessage!)),
+                      );
+                    }
                   }
-                  
-                  // Close WebView and navigate to home screen
+                } else {
+                  errorMessage = 'Authentication failed';
                   if (context.mounted) {
                     Navigator.of(context).pop(); // Close WebView
-                    Navigator.of(context).pushReplacementNamed('/home'); // Navigate to home screen
+                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(errorMessage!)),
+                    );
                   }
                 }
-              },
-            ),
+              } catch (e) {
+                await logout();
+                errorMessage = 'Authentication failed: ${e.toString()}';
+                if (context.mounted) {
+                  Navigator.of(context).pop(); // Close WebView
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(errorMessage!)),
+                  );
+                }
+              }
+            },
           ),
+        ),
+      );
+    } catch (e) {
+      await logout();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
         );
       }
-    } catch (e) {
-      rethrow;
     }
   }
 

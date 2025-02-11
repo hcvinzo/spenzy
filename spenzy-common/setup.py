@@ -8,5 +8,6 @@ setup(
         "python-keycloak>=3.0.0",
         "grpcio>=1.68.0",
         "grpcio-tools>=1.68.0",
+        "httpx>=0.27.0",
     ],
 ) 

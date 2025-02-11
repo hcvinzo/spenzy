@@ -8,6 +8,7 @@ import 'package:spenzy_app/services/document_service.dart';
 import 'package:spenzy_app/generated/proto/google/protobuf/timestamp.pb.dart';
 import 'package:spenzy_app/utils/document_picker.dart';
 import 'package:spenzy_app/services/category_service.dart';
+import 'package:spenzy_app/widgets/tag_input.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final DocumentResponse? documentResponse;
@@ -25,8 +26,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _expenseService = ExpenseService();
   final _categoryService = CategoryService();
-  late final DocumentPicker _documentPicker;
+  DocumentPicker? _documentPicker;
   bool _isLoading = false;
+  bool _isInitializing = true;
   File? _selectedFile;
 
   // Form fields
@@ -38,34 +40,47 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   bool _isPaid = false;
   DateTime _expenseDate = DateTime.now();
   DateTime? _paidOn;
+  DateTime? _dueDate;
+  List<expense_pb.Tag> _selectedTags = [];
 
-  final List<String> _currencies = ['USD', 'EUR', 'TRY'];
+  final List<String> _currencies = ['USD', 'EUR', 'TL'];
   List<expense_pb.Category> _categories = [];
 
   @override
   void initState() {
     super.initState();
-    _documentPicker = DocumentPicker(
-      onLoadingChanged: (loading) => setState(() => _isLoading = loading),
-      onError: (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        }
-      },
-      onDocumentProcessed: (response, file) {
-        setState(() => _selectedFile = file);
-        _fillFormWithDocumentData(response);
-      },
-    );
-    
-    if (widget.documentResponse != null) {
-      _fillFormWithDocumentData(widget.documentResponse!);
-    }
+    _initializeScreen();
+  }
 
-    // Load categories when screen initializes
-    _loadCategories();
+  Future<void> _initializeScreen() async {
+    try {
+      await _loadCategories();
+      
+      _documentPicker = DocumentPicker(
+        onLoadingChanged: (loading) => setState(() => _isLoading = loading),
+        onError: (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error)),
+            );
+          }
+        },
+        onDocumentProcessed: (response, file) {
+          setState(() => _selectedFile = file);
+          _fillFormWithDocumentData(response);
+        },
+      );
+      
+      if (widget.documentResponse != null) {
+        _fillFormWithDocumentData(widget.documentResponse!);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -79,9 +94,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Future<void> _loadCategories() async {
     try {
       final categories = await _categoryService.listCategories();
-      setState(() {
-        _categories = categories;
-      });
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          if (categories.isNotEmpty) {
+            _selectedCategory = categories.first;
+          }
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,9 +117,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _totalAmountController.text = response.dueAmountValue.toString();
       _totalTaxController.text = response.totalTaxValue.toString();
       
+      debugPrint('Document suggested category: ${response.category}');
+      
       // Try to find category by name from document
       if (response.category.isNotEmpty && _categories.isNotEmpty) {
-        debugPrint('Document suggested category: ${response.category}');
+        
         debugPrint('Available categories: ${_categories.map((c) => c.name).join(', ')}');
         
         // First try exact match
@@ -139,6 +161,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           debugPrint('Failed to parse invoice date: ${response.invoiceDate}');
         }
       }
+      if (response.dueDate.isNotEmpty) {
+        try {
+          _dueDate = DateFormat('yyyy-MM-dd').parse(response.dueDate);
+        } catch (e) {
+          debugPrint('Failed to parse due date: ${response.dueDate}');
+        }
+      }
       _isPaid = response.isPaid;
       if (_isPaid) {
         _paidOn = _expenseDate;
@@ -163,7 +192,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         currency: _selectedCurrency,
         isPaid: _isPaid,
         paidOn: _isPaid && _paidOn != null ? Timestamp.fromDateTime(_paidOn!) : null,
+        dueDate: _dueDate != null ? Timestamp.fromDateTime(_dueDate!) : null,
       );
+
+      // Add tags
+      request.tagIds.addAll(_selectedTags.map((tag) => tag.id).toList());
 
       await _expenseService.createExpense(request);
       
@@ -185,9 +218,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitializing || _documentPicker == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Expense'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _isLoading ? null : _saveExpense,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -199,7 +246,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_selectedFile == null)
-                      _documentPicker.buildDocumentPickerRow()
+                      _documentPicker!.buildDocumentPickerRow()
                     else
                       Card(
                         child: Padding(
@@ -222,7 +269,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                       style: Theme.of(context).textTheme.titleMedium,
                                     ),
                                     TextButton(
-                                      onPressed: _documentPicker.pickAndProcessFile,
+                                      onPressed: _documentPicker!.pickAndProcessFile,
                                       child: const Text('Change document'),
                                     ),
                                   ],
@@ -390,18 +437,45 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           }
                         },
                       ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_selectedCategory == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select a category')),
-                          );
-                          return;
+                    const SizedBox(height: 16),
+                    ListTile(
+                      title: const Text('Due Date'),
+                      subtitle: Text(
+                        _dueDate != null
+                            ? '${_dueDate!.year}-${_dueDate!.month}-${_dueDate!.day}'
+                            : 'Not set',
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _dueDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),  // Allow future dates for due date
+                        );
+                        if (date != null) {
+                          setState(() {
+                            _dueDate = date;
+                          });
                         }
-                        _saveExpense();
                       },
-                      child: const Text('Save Expense'),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Tags',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TagInput(
+                      initialTags: _selectedTags,
+                      onTagsChanged: (tags) {
+                        setState(() {
+                          _selectedTags = tags;
+                        });
+                      },
                     ),
                   ],
                 ),
