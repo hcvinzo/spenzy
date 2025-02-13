@@ -62,11 +62,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
+              Image.asset('assets/images/logo.png', width: 100, height: 100),
               const Text(
-                'Invoice Parser',
+                'spenzy',
                 style: TextStyle(
+                  fontFamily: "Poppins",
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -102,4 +105,4 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
     );
   }
-} 
+}

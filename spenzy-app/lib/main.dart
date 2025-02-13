@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -14,34 +15,50 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Invoice Parser',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFF39AE9A), // Background color (Android)
+        statusBarIconBrightness: Brightness.light, // Icons color (Android)
+        statusBarBrightness: Brightness.dark, // Icons color (iOS)
       ),
-      home: const AuthWrapper(),
-      onGenerateRoute: (settings) {
-        // Handle deep link
-        if (settings.name != null && settings.name!.startsWith('/callback')) {
-          final uri = Uri.parse(settings.name!.replaceFirst('/', ''));
-          return MaterialPageRoute(
-            builder: (context) => CallbackHandler(uri: uri),
-          );
-        }
+      child: MaterialApp(
+        title: 'Spenzy',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF39AE9A),
+              surface: const Color(0xFF1e2027)),
+          fontFamily: "Poppins",
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF39AE9A),
+            elevation: 0,
+            foregroundColor: Colors.white,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+        ),
+        home: const AuthWrapper(),
+        onGenerateRoute: (settings) {
+          // Handle deep link
+          if (settings.name != null && settings.name!.startsWith('/callback')) {
+            final uri = Uri.parse(settings.name!.replaceFirst('/', ''));
+            return MaterialPageRoute(
+              builder: (context) => CallbackHandler(uri: uri),
+            );
+          }
 
-        // Handle other routes
-        switch (settings.name) {
-          case '/':
-            return MaterialPageRoute(builder: (_) => const WelcomeScreen());
-          case '/home':
-            return MaterialPageRoute(builder: (_) => const HomeScreen());
-          case '/profile':
-            return MaterialPageRoute(builder: (_) => const ProfileScreen());
-          default:
-            return MaterialPageRoute(builder: (_) => const WelcomeScreen());
-        }
-      },
+          // Handle other routes
+          switch (settings.name) {
+            case '/':
+              return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+            case '/home':
+              return MaterialPageRoute(builder: (_) => const HomeScreen());
+            case '/profile':
+              return MaterialPageRoute(builder: (_) => const ProfileScreen());
+            default:
+              return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+          }
+        },
+      ),
     );
   }
 }
@@ -69,10 +86,11 @@ class _CallbackHandlerState extends State<CallbackHandler> {
     try {
       final authService = AuthService();
       final success = await authService.handleAuthCallback(widget.uri);
-      
+
       if (mounted) {
         if (success) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/home', (route) => false);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Authentication failed')),

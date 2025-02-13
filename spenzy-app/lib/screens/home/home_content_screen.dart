@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:spenzy_app/generated/proto/expense/expense.pb.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:spenzy_app/utils/document_picker.dart';
 import 'package:spenzy_app/screens/expense/expense_detail_screen.dart';
+import 'package:spenzy_app/screens/expense/expense_list_screen.dart';
 
 class HomeContentScreen extends StatefulWidget {
   const HomeContentScreen({super.key});
@@ -21,8 +23,8 @@ class _HomeContentScreenState extends State<HomeContentScreen> {
   late final DocumentPicker _documentPicker;
   bool _isLoading = true;
   List<Expense> _recentExpenses = [];
-  double _totalAmount = 0;
-  int _totalExpenses = 0;
+  double _totalIncome = 500.00; // TODO: Replace with actual income data
+  double _totalExpense = 0;
 
   @override
   void initState() {
@@ -67,15 +69,14 @@ class _HomeContentScreenState extends State<HomeContentScreen> {
 
       double total = 0;
       for (var expense in expenses) {
-        if (expense.currency == 'USD') { // For simplicity, only counting USD
+        if (expense.currency == 'USD') {
           total += expense.totalAmount;
         }
       }
 
       setState(() {
         _recentExpenses = expenses;
-        _totalAmount = total;
-        _totalExpenses = expenses.length;
+        _totalExpense = total;
         _isLoading = false;
       });
     } catch (e) {
@@ -90,55 +91,89 @@ class _HomeContentScreenState extends State<HomeContentScreen> {
     }
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
+  Widget _buildSummaryCard(String title, String amount,
+      {bool isIncome = false}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2D3E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            amount,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRecentExpenseItem(Expense expense) {
-    return ListTile(
-      leading: const CircleAvatar(
-        child: Icon(Icons.receipt),
+  Widget _buildTransactionItem({
+    required String title,
+    required String subtitle,
+    required String amount,
+    required IconData icon,
+    required bool isIncome,
+    required Expense expense,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2D3E),
+        borderRadius: BorderRadius.circular(12),
       ),
-      title: Text(expense.vendorName),
-      subtitle: Text(DateFormat('MMM dd, yyyy').format(expense.expenseDate.toDateTime())),
-      trailing: Text(
-        '${expense.currency} ${expense.totalAmount.toStringAsFixed(2)}',
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ExpenseDetailScreen(expense: expense),
+      child: ListTile(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExpenseDetailScreen(expense: expense),
+            ),
+          );
+        },
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .1),
+            borderRadius: BorderRadius.circular(8),
           ),
-        );
-        
-        if (result == true) {
-          _loadData();
-        }
-      },
+          child: Icon(icon, color: Colors.white),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        trailing: Text(
+          amount,
+          style: TextStyle(
+            color: isIncome ? Colors.green : const Color(0xFFce5e51),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ),
     );
   }
 
@@ -150,101 +185,150 @@ class _HomeContentScreenState extends State<HomeContentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hi, Hakan',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              'Good morning',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+        centerTitle: false,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              backgroundColor: Colors.white24,
+              child: Icon(Icons.person),
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
-          padding: const EdgeInsets.all(16),
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Expenses',
-                    _totalExpenses.toString(),
-                    Icons.receipt_long,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Amount (USD)',
-                    '\$${_totalAmount.toStringAsFixed(2)}',
-                    Icons.attach_money,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 24),
-            Text(
-              'Recent Expenses',
-              style: Theme.of(context).textTheme.titleLarge,
+
+            // Monthly Summary
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'This month',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSummaryCard(
+                            'income', '\$${_totalIncome.toStringAsFixed(2)}',
+                            isIncome: true),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSummaryCard(
+                            'expense', '\$${_totalExpense.toStringAsFixed(2)}'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSummaryCard('total',
+                            '\$${(_totalIncome - _totalExpense).toStringAsFixed(2)}'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            if (_recentExpenses.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('No recent expenses'),
-                ),
-              )
-            else
-              Card(
-                child: Column(
-                  children: _recentExpenses
-                      .map((expense) => _buildRecentExpenseItem(expense))
-                      .toList(),
+
+            const SizedBox(height: 24),
+
+            // Recent Transactions
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2A2D3E),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent transaction',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ExpenseListScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'View all',
+                          style: TextStyle(color: Color(0xFF39AE9A)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_recentExpenses.isEmpty)
+                    const Center(
+                      child: Text(
+                        'No recent transactions',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: _recentExpenses.map((expense) {
+                        return _buildTransactionItem(
+                          title: expense.vendorName,
+                          subtitle: expense.hasCategory()
+                              ? expense.category.name
+                              : '',
+                          amount:
+                              '${expense.currency} ${expense.totalAmount.toStringAsFixed(2)}',
+                          icon: Icons.receipt,
+                          isIncome: false,
+                          expense: expense,
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      floatingActionButton: SpeedDial(
-        icon: Icons.add,
-        activeIcon: Icons.close,
-        spacing: 3,
-        childPadding: const EdgeInsets.all(5),
-        spaceBetweenChildren: 4,
-        children: [
-          SpeedDialChild(
-            child: const Icon(Icons.edit),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            label: 'Add Manually',
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
-              );
-              if (result == true) {
-                _loadData();
-              }
-            },
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.upload_file),
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            label: 'Upload Document',
-            onTap: _documentPicker.pickAndProcessFile,
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.photo_library),
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            label: 'Choose from Gallery',
-            onTap: () => _documentPicker.pickAndProcessImage(ImageSource.gallery),
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.camera_alt),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            label: 'Take Photo',
-            onTap: () => _documentPicker.pickAndProcessImage(ImageSource.camera),
-          ),
-        ],
-      ),
     );
   }
-} 
+}

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:spenzy_app/screens/expense/expense_list_screen.dart';
 import 'package:spenzy_app/screens/home/home_content_screen.dart';
+import 'package:spenzy_app/screens/expense/add_expense_screen.dart';
+import 'package:spenzy_app/utils/document_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,12 +15,42 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  late final DocumentPicker _documentPicker;
 
   static const List<Widget> _screens = [
     HomeContentScreen(),
     ExpenseListScreen(),
     Center(child: Text('Profile')),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _documentPicker = DocumentPicker(
+      onLoadingChanged: (loading) {
+        // Handle loading state if needed
+      },
+      onError: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        }
+      },
+      onDocumentProcessed: (response, file) async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddExpenseScreen(documentResponse: response),
+          ),
+        );
+
+        if (result == true) {
+          // Refresh data if needed
+        }
+      },
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -28,24 +62,97 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
-            label: 'Expenses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: const Color(0xFF1e2027),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) => Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.edit, color: Colors.white),
+                    title: const Text('Add Manually',
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AddExpenseScreen()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.upload_file, color: Colors.white),
+                    title: const Text('Upload Document',
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _documentPicker.pickAndProcessFile();
+                    },
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.photo_library, color: Colors.white),
+                    title: const Text('Choose from Gallery',
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _documentPicker.pickAndProcessImage(ImageSource.gallery);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt, color: Colors.white),
+                    title: const Text('Take Photo',
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _documentPicker.pickAndProcessImage(ImageSource.camera);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        backgroundColor: Colors.teal,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: const Color(0xFF1e2027),
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        height: 60,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: Icon(Icons.home,
+                  color: _selectedIndex == 0 ? Colors.teal : Colors.white54),
+              onPressed: () => _onItemTapped(0),
+            ),
+            IconButton(
+              icon: Icon(Icons.receipt_long,
+                  color: _selectedIndex == 1 ? Colors.teal : Colors.white54),
+              onPressed: () => _onItemTapped(1),
+            ),
+            const SizedBox(width: 40), // Space for FAB
+            IconButton(
+              icon: Icon(Icons.person,
+                  color: _selectedIndex == 2 ? Colors.teal : Colors.white54),
+              onPressed: () => _onItemTapped(2),
+            ),
+          ],
+        ),
       ),
     );
   }
-} 
+}
