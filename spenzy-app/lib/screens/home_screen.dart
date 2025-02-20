@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:spenzy_app/providers/loading_provider.dart';
 import 'package:spenzy_app/screens/expense/expense_list_screen.dart';
 import 'package:spenzy_app/screens/home/home_content_screen.dart';
 import 'package:spenzy_app/screens/expense/add_expense_screen.dart';
 import 'package:spenzy_app/utils/document_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:spenzy_app/widgets/loading_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,11 +29,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+
+    final loadingProvider =
+        Provider.of<LoadingProvider>(context, listen: false);
+
     _documentPicker = DocumentPicker(
       onLoadingChanged: (loading) {
         // Handle loading state if needed
+        if (loading) {
+          loadingProvider.show();
+        } else {
+          loadingProvider.hide();
+        }
       },
       onError: (error) {
+        loadingProvider.hide();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(error)),
@@ -61,7 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      backgroundColor: const Color(0xFF2c2c34),
+      body: Stack(
+        children: [
+          _screens[_selectedIndex],
+          const LoadingOverlay(),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
@@ -131,6 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         height: 60,
+        shadowColor: Colors.white,
+        elevation: 10,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [

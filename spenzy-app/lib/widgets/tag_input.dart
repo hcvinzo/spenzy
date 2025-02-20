@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spenzy_app/generated/proto/expense/expense.pb.dart' as expense_pb;
+import 'package:spenzy_app/generated/proto/expense/expense.pb.dart'
+    as expense_pb;
 import 'package:spenzy_app/services/tag_service.dart';
 
 class TagInput extends StatefulWidget {
@@ -58,9 +59,10 @@ class _TagInputState extends State<TagInput> {
       final tags = await _tagService.listTags(query: query);
       if (mounted) {
         setState(() {
-          _suggestions = tags.where((tag) => 
-            !_selectedTags.any((selected) => selected.id == tag.id)
-          ).toList();
+          _suggestions = tags
+              .where((tag) =>
+                  !_selectedTags.any((selected) => selected.id == tag.id))
+              .toList();
         });
       }
     } catch (e) {
@@ -123,9 +125,11 @@ class _TagInputState extends State<TagInput> {
           runSpacing: 4,
           children: _selectedTags.map((tag) {
             return Chip(
-              label: Text(tag.name),
+              label:
+                  Text(tag.name, style: const TextStyle(color: Colors.white)),
               onDeleted: widget.enabled ? () => _removeTag(tag) : null,
-              deleteIcon: widget.enabled ? const Icon(Icons.close, size: 18) : null,
+              deleteIcon:
+                  widget.enabled ? const Icon(Icons.close, size: 18) : null,
             );
           }).toList(),
         ),
@@ -141,12 +145,15 @@ class _TagInputState extends State<TagInput> {
             },
             displayStringForOption: (expense_pb.Tag tag) => tag.name,
             onSelected: _addTag,
-            fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            fieldViewBuilder:
+                (context, controller, focusNode, onFieldSubmitted) {
               return TextField(
                 controller: controller,
                 focusNode: focusNode,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Add tags...',
+                  hintStyle: const TextStyle(color: Colors.white70),
                   suffixIcon: _isLoading
                       ? const SizedBox(
                           width: 20,
@@ -188,7 +195,8 @@ class _TagInputState extends State<TagInput> {
                       itemBuilder: (context, index) {
                         final option = options.elementAt(index);
                         return ListTile(
-                          title: Text(option.name),
+                          title: Text(option.name,
+                              style: const TextStyle(color: Colors.white)),
                           onTap: () => onSelected(option),
                         );
                       },
@@ -202,4 +210,4 @@ class _TagInputState extends State<TagInput> {
       ],
     );
   }
-} 
+}

@@ -106,12 +106,15 @@ class ExpenseService:
         """Update an expense."""
         async for session in get_db():
             # Get existing expense
-            stmt = select(Expense).filter(
+            stmt = select(Expense).options(
+                joinedload(Expense.category),
+                joinedload(Expense.tags)
+            ).filter(
                 Expense.id == expense_id,
                 Expense.user_id == user_id
             )
             result = await session.execute(stmt)
-            db_expense = result.scalar_one_or_none()
+            db_expense = result.unique().scalar_one_or_none()
 
             if not db_expense:
                 return None

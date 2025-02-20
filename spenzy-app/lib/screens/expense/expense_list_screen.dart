@@ -4,8 +4,6 @@ import 'package:spenzy_app/services/expense_service.dart';
 import 'package:spenzy_app/screens/expense/add_expense_screen.dart';
 import 'package:spenzy_app/screens/expense/expense_detail_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:spenzy_app/utils/document_picker.dart';
 
 class ExpenseListScreen extends StatefulWidget {
@@ -23,35 +21,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   int _currentPage = 1;
   static const _pageSize = 20;
   bool _hasMore = true;
-  late final DocumentPicker _documentPicker;
 
   @override
   void initState() {
     super.initState();
     _loadExpenses();
     _scrollController.addListener(_onScroll);
-    _documentPicker = DocumentPicker(
-      onLoadingChanged: (loading) => setState(() => _isLoading = loading),
-      onError: (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        }
-      },
-      onDocumentProcessed: (response, file) async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddExpenseScreen(documentResponse: response),
-          ),
-        );
-
-        if (result == true) {
-          _refreshExpenses();
-        }
-      },
-    );
   }
 
   @override
@@ -94,7 +69,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadExpenses();
     }
   }
@@ -132,22 +108,33 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             final expense = _expenses[index];
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: const Color(0xFF2b2c34),
+              shadowColor: Colors.black.withValues(alpha: 0.3),
+              elevation: 10,
               child: ListTile(
-                title: Text(expense.vendorName),
+                title: Text(expense.vendorName,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w500)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(DateFormat('MMM dd, yyyy').format(expense.expenseDate.toDateTime())),
-                    if (expense.hasCategory()) Text(expense.category.name),
+                    Text(
+                        DateFormat('MMM dd, yyyy')
+                            .format(expense.expenseDate.toDateTime()),
+                        style: const TextStyle(color: Colors.white70)),
+                    if (expense.hasCategory())
+                      Text(expense.category.name,
+                          style: const TextStyle(color: Colors.white70)),
                     if (expense.tags.isNotEmpty)
                       Wrap(
                         spacing: 4,
                         runSpacing: 2,
                         children: expense.tags.map((tag) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: const Color(0xFF2b2c34),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -163,7 +150,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   ],
                 ),
                 trailing: SizedBox(
-                  width: 100,
+                  width: 120,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -171,11 +158,16 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                     children: [
                       Text(
                         '${expense.currency} ${expense.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: const Color(0xFFce5e51),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: expense.isPaid ? Colors.green : Colors.orange,
                           borderRadius: BorderRadius.circular(12),
@@ -195,10 +187,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ExpenseDetailScreen(expense: expense),
+                      builder: (context) =>
+                          ExpenseDetailScreen(expense: expense),
                     ),
                   );
-                  
+
                   if (result == true) {
                     _refreshExpenses();
                   }
@@ -208,51 +201,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           },
         ),
       ),
-      floatingActionButton: SpeedDial(
-        icon: Icons.add,
-        activeIcon: Icons.close,
-        spacing: 3,
-        childPadding: const EdgeInsets.all(5),
-        spaceBetweenChildren: 4,
-        children: [
-          SpeedDialChild(
-            child: const Icon(Icons.edit),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            label: 'Add Manually',
-            onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
-              );
-              if (result == true) {
-                _refreshExpenses();
-              }
-            },
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.upload_file),
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            label: 'Upload Document',
-            onTap: _documentPicker.pickAndProcessFile,
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.photo_library),
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            label: 'Choose from Gallery',
-            onTap: () => _documentPicker.pickAndProcessImage(ImageSource.gallery),
-          ),
-          SpeedDialChild(
-            child: const Icon(Icons.camera_alt),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            label: 'Take Photo',
-            onTap: () => _documentPicker.pickAndProcessImage(ImageSource.camera),
-          ),
-        ],
-      ),
     );
   }
-} 
+}

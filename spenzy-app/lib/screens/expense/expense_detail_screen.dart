@@ -5,6 +5,7 @@ import 'package:spenzy_app/services/category_service.dart';
 import 'package:spenzy_app/services/expense_service.dart';
 import 'package:spenzy_app/generated/proto/google/protobuf/timestamp.pb.dart';
 import 'package:spenzy_app/widgets/tag_input.dart';
+import 'package:spenzy_app/widgets/expense_form.dart';
 
 class ExpenseDetailScreen extends StatefulWidget {
   final Expense expense;
@@ -19,191 +20,92 @@ class ExpenseDetailScreen extends StatefulWidget {
 }
 
 class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _expenseService = ExpenseService();
-  final _categoryService = CategoryService();
   bool _isLoading = false;
   bool _isEditing = false;
 
-  // Form controllers
-  late final TextEditingController _vendorNameController;
-  late final TextEditingController _totalAmountController;
-  late final TextEditingController _totalTaxController;
-  late DateTime _expenseDate;
-  late bool _isPaid;
-  late DateTime? _paidOn;
-  late DateTime? _dueDate;
-  late String _selectedCurrency;
-  late Category? _selectedCategory;
-  List<Category> _categories = [];
-  List<Tag> _selectedTags = [];
-
-  final List<String> _currencies = ['USD', 'EUR', 'TL'];
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeFormData();
-    _loadCategories();
-  }
-
-  void _initializeFormData() {
-    _vendorNameController = TextEditingController(text: widget.expense.vendorName);
-    _totalAmountController = TextEditingController(text: widget.expense.totalAmount.toString());
-    _totalTaxController = TextEditingController(text: widget.expense.totalTax.toString());
-    _expenseDate = widget.expense.expenseDate.toDateTime();
-    _isPaid = widget.expense.isPaid;
-    _paidOn = widget.expense.hasPaidOn() ? widget.expense.paidOn.toDateTime() : null;
-    _dueDate = widget.expense.hasDueDate() ? widget.expense.dueDate.toDateTime() : null;
-    _selectedCurrency = widget.expense.currency;
-    _selectedCategory = widget.expense.hasCategory() ? widget.expense.category : null;
-    _selectedTags = List.from(widget.expense.tags);
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final categories = await _categoryService.listCategories();
-      if (mounted) {
-        setState(() {
-          _categories = categories;
-          // Find matching category from loaded categories
-          if (_selectedCategory != null) {
-            _selectedCategory = categories.firstWhere(
-              (cat) => cat.id == _selectedCategory!.id,
-              orElse: () => categories.first,
-            );
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading categories: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _selectDate(BuildContext context, String dateType) async {
-    DateTime initialDate;
-    DateTime lastDate;
-
-    switch (dateType) {
-      case 'expense':
-        initialDate = _expenseDate;
-        lastDate = DateTime.now();
-        break;
-      case 'paid':
-        initialDate = _paidOn ?? DateTime.now();
-        lastDate = DateTime.now();
-        break;
-      case 'due':
-        initialDate = _dueDate ?? DateTime.now();
-        lastDate = DateTime(2100);  // Allow future dates for due date
-        break;
-      default:
-        return;
-    }
-
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2000),
-      lastDate: lastDate,
-    );
-
-    if (picked != null && mounted) {
-      setState(() {
-        switch (dateType) {
-          case 'expense':
-            _expenseDate = picked;
-            break;
-          case 'paid':
-            _paidOn = picked;
-            break;
-          case 'due':
-            _dueDate = picked;
-            break;
-        }
-      });
-    }
-  }
-
-  Future<void> _saveExpense() async {
-    if (!_formKey.currentState!.validate()) return;
-
+  Future<void> _handleSave(Map<String, dynamic> formData) async {
     setState(() => _isLoading = true);
 
     try {
-      final request = UpdateExpenseRequest()
-        ..id = widget.expense.id;
+      final request = UpdateExpenseRequest()..id = widget.expense.id;
 
-      // Only set fields that have changed
-      if (_vendorNameController.text != widget.expense.vendorName) {
-        request.vendorName = _vendorNameController.text;
+      if (formData['vendorName'] != widget.expense.vendorName) {
+        request.vendorName = formData['vendorName'];
       }
 
-      final newAmount = double.parse(_totalAmountController.text);
+      final newAmount = formData['totalAmount'] as double;
       if (newAmount != widget.expense.totalAmount) {
         request.totalAmount = newAmount;
       }
 
-      final newTax = double.parse(_totalTaxController.text);
+      final newTax = formData['totalTax'] as double;
       if (newTax != widget.expense.totalTax) {
         request.totalTax = newTax;
       }
 
-      if (_expenseDate != widget.expense.expenseDate.toDateTime()) {
-        request.expenseDate = Timestamp.fromDateTime(_expenseDate.toUtc());
+      final newDate = formData['expenseDate'] as DateTime;
+      if (newDate != widget.expense.expenseDate.toDateTime()) {
+        request.expenseDate = Timestamp.fromDateTime(newDate.toUtc());
       }
 
-      if (_selectedCategory?.id != widget.expense.category.id) {
-        request.categoryId = _selectedCategory?.id ?? 0;
+      final newCategory = formData['category'] as Category?;
+      if (newCategory?.id != widget.expense.category.id) {
+        request.categoryId = newCategory?.id ?? 0;
       }
 
-      if (_selectedCurrency != widget.expense.currency) {
-        request.currency = _selectedCurrency;
+      final newCurrency = formData['currency'] as String;
+      if (newCurrency != widget.expense.currency) {
+        request.currency = newCurrency;
       }
 
-      if (_isPaid != widget.expense.isPaid) {
-        request.isPaid = _isPaid;
+      final newIsPaid = formData['isPaid'] as bool;
+      if (newIsPaid != widget.expense.isPaid) {
+        request.isPaid = newIsPaid;
       }
 
       // Handle paid on date
-      if (_isPaid) {
-        // When expense is marked as paid, set the paid_on date
-        request.paidOn = Timestamp.fromDateTime((_paidOn ?? DateTime.now()).toUtc());
+      final newPaidOn = formData['paidOn'] as DateTime?;
+      if (newIsPaid) {
+        request.paidOn =
+            Timestamp.fromDateTime((newPaidOn ?? DateTime.now()).toUtc());
       } else if (widget.expense.hasPaidOn()) {
-        // When expense is marked as unpaid and it had a paid_on date, explicitly set it to null
-        request.paidOn = Timestamp.fromDateTime(DateTime.fromMillisecondsSinceEpoch(0).toUtc());
+        request.paidOn = Timestamp.fromDateTime(
+            DateTime.fromMillisecondsSinceEpoch(0).toUtc());
       }
 
       // Handle due date
-      if (_dueDate != null && (!widget.expense.hasDueDate() || _dueDate != widget.expense.dueDate.toDateTime())) {
-        request.dueDate = Timestamp.fromDateTime(_dueDate!.toUtc());
-      } else if (widget.expense.hasDueDate() && _dueDate == null) {
-        // When due date is removed, explicitly set it to null
-        request.dueDate = Timestamp.fromDateTime(DateTime.fromMillisecondsSinceEpoch(0).toUtc());
+      final newDueDate = formData['dueDate'] as DateTime?;
+      if (newDueDate != null &&
+          (!widget.expense.hasDueDate() ||
+              newDueDate != widget.expense.dueDate.toDateTime())) {
+        request.dueDate = Timestamp.fromDateTime(newDueDate.toUtc());
+      } else if (widget.expense.hasDueDate() && newDueDate == null) {
+        request.dueDate = Timestamp.fromDateTime(
+            DateTime.fromMillisecondsSinceEpoch(0).toUtc());
       }
 
       // Handle tags
+      final newTags = formData['tags'] as List<Tag>;
       final currentTagIds = widget.expense.tags.map((t) => t.id).toList();
-      final newTagIds = _selectedTags.map((t) => t.id).toList();
+      final newTagIds = newTags.map((t) => t.id).toList();
       if (!_areListsEqual(currentTagIds, newTagIds)) {
         request.tagIds.addAll(newTagIds);
       }
 
       final response = await _expenseService.updateExpense(request);
-      
+
       if (mounted) {
         if (response.success) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Expense updated successfully')),
           );
-          Navigator.pop(context, true); // Return true to indicate update
+          Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update expense: ${response.errorMessage}')),
+            SnackBar(
+                content:
+                    Text('Failed to update expense: ${response.errorMessage}')),
           );
         }
       }
@@ -215,7 +117,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isEditing = false;
+        });
       }
     }
   }
@@ -256,12 +161,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
     try {
       await _expenseService.deleteExpense(widget.expense.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Expense deleted successfully')),
         );
-        Navigator.pop(context, true); // Return true to indicate update
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -277,229 +182,198 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   }
 
   @override
-  void dispose() {
-    _vendorNameController.dispose();
-    _totalAmountController.dispose();
-    _totalTaxController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFF212029),
       appBar: AppBar(
-        title: const Text('Expense Details'),
+        title: const Text('Expense Detail'),
         actions: [
-          if (!_isEditing) IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _isLoading ? null : _deleteExpense,
-          ),
           IconButton(
-            icon: Icon(_isEditing ? Icons.save : Icons.edit),
-            onPressed: _isLoading
-                ? null
-                : () {
-                    if (_isEditing) {
-                      _saveExpense();
-                    } else {
-                      setState(() => _isEditing = true);
-                    }
-                  },
+            icon: Icon(_isEditing ? Icons.close : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
           ),
+          if (!_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: _deleteExpense,
+            ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _vendorNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Vendor Name',
-                      ),
-                      enabled: _isEditing,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter vendor name';
-                        }
-                        return null;
-                      },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: _isEditing
+            ? ExpenseForm(
+                expense: widget.expense,
+                isEditing: true,
+                onSave: _handleSave,
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header card with category and amount
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2b2c34),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
+                    child: Row(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _totalAmountController,
-                            decoration: const InputDecoration(
-                              labelText: 'Total Amount',
-                            ),
-                            enabled: _isEditing,
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter amount';
-                              }
-                              if (double.tryParse(value) == null) {
-                                return 'Please enter a valid number';
-                              }
-                              return null;
-                            },
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.receipt,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: TextFormField(
-                            controller: _totalTaxController,
-                            decoration: const InputDecoration(
-                              labelText: 'Total Tax',
-                            ),
-                            enabled: _isEditing,
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter tax amount';
-                              }
-                              if (double.tryParse(value) == null) {
-                                return 'Please enter a valid number';
-                              }
-                              return null;
-                            },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.expense.vendorName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.expense.hasCategory()
+                                    ? widget.expense.category.name
+                                    : 'Uncategorized',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedCurrency,
-                            decoration: const InputDecoration(
-                              labelText: 'Currency',
-                            ),
-                            items: _currencies.map((String currency) {
-                              return DropdownMenuItem<String>(
-                                value: currency,
-                                child: Text(currency),
-                              );
-                            }).toList(),
-                            onChanged: _isEditing
-                                ? (String? newValue) {
-                                    if (newValue != null) {
-                                      setState(() {
-                                        _selectedCurrency = newValue;
-                                      });
-                                    }
-                                  }
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<Category>(
-                            value: _selectedCategory,
-                            decoration: const InputDecoration(
-                              labelText: 'Category',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: _categories.map((category) {
-                              return DropdownMenuItem<Category>(
-                                value: category,
-                                child: Text(category.name),
-                              );
-                            }).toList(),
-                            onChanged: _isEditing
-                                ? (Category? newValue) {
-                                    setState(() {
-                                      _selectedCategory = newValue;
-                                    });
-                                  }
-                                : null,
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a category';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
+                  ),
+
+                  // Expense details
+                  _buildDetailSection(
+                    'Expense Date',
+                    DateFormat('dd MMM yyyy')
+                        .format(widget.expense.expenseDate.toDateTime()),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildDetailSection(
+                    'Amount',
+                    '${widget.expense.currency} ${widget.expense.totalAmount.toStringAsFixed(2)}',
+                  ),
+                  const SizedBox(height: 24),
+                  _buildDetailSection(
+                    'Tax',
+                    '${widget.expense.currency} ${widget.expense.totalTax.toStringAsFixed(2)}',
+                  ),
+                  if (widget.expense.isPaid) ...[
+                    const SizedBox(height: 24),
+                    _buildDetailSection(
+                      'Paid On',
+                      widget.expense.hasPaidOn()
+                          ? DateFormat('dd MMM yyyy')
+                              .format(widget.expense.paidOn.toDateTime())
+                          : 'Not set',
                     ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      title: const Text('Expense Date'),
-                      subtitle: Text(
-                        DateFormat('yyyy-MM-dd').format(_expenseDate),
-                      ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: _isEditing ? () => _selectDate(context, 'expense') : null,
+                  ],
+                  if (widget.expense.hasDueDate()) ...[
+                    const SizedBox(height: 24),
+                    _buildDetailSection(
+                      'Due Date',
+                      DateFormat('dd MMM yyyy')
+                          .format(widget.expense.dueDate.toDateTime()),
                     ),
-                    if (_isPaid)
-                      ListTile(
-                        title: const Text('Payment Date'),
-                        subtitle: Text(
-                          _paidOn != null
-                              ? DateFormat('yyyy-MM-dd').format(_paidOn!)
-                              : 'Not set',
-                        ),
-                        trailing: const Icon(Icons.calendar_today),
-                        onTap: _isEditing ? () => _selectDate(context, 'paid') : null,
-                      ),
-                    ListTile(
-                      title: const Text('Due Date'),
-                      subtitle: Text(
-                        _dueDate != null
-                            ? DateFormat('yyyy-MM-dd').format(_dueDate!)
-                            : 'Not set',
-                      ),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: _isEditing ? () => _selectDate(context, 'due') : null,
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: const Text('Paid'),
-                      value: _isPaid,
-                      onChanged: _isEditing
-                          ? (bool value) {
-                              setState(() {
-                                _isPaid = value;
-                                if (!value) {
-                                  _paidOn = null;
-                                } else if (_paidOn == null) {
-                                  _paidOn = DateTime.now();
-                                }
-                              });
-                            }
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
+                  ],
+                  if (widget.expense.tags.isNotEmpty) ...[
+                    const SizedBox(height: 24),
                     const Text(
                       'Tags',
                       style: TextStyle(
+                        color: Colors.white70,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TagInput(
-                      initialTags: _selectedTags,
-                      enabled: _isEditing,
-                      onTagsChanged: (tags) {
-                        setState(() {
-                          _selectedTags = tags;
-                        });
-                      },
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.expense.tags.map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            tag.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
-                ),
+                ],
               ),
-            ),
+      ),
     );
   }
-} 
+
+  Widget _buildDetailSection(String title, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}

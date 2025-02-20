@@ -66,11 +66,12 @@ Bu satış İnternet üzerinden yapılmıştır.
     "type": "invoice",
     "language": "Turkish",
     "currency": "TL",
-    "vendor": "Bermed Medikal Sağlık Ürünleri Kozmetik Temizlik Malzemeleri İthalat İhracat San.Tic.Ltd.Şti.",
+    "vendor": "Bermed Medikal Sağlık Ürünleri Kozmetik Temizlik Malzemeleri ithalat ihracat San.Tic.Ltd.Şti.",
     "customer": "Hakan Çiçek",
     "date": "2024-10-09",
-    "amount": 308.16,
-    "tax": 28.01,
+    "due_date": "2024-10-09",
+    "amount": "308.16",
+    "tax": "28.01",
     "category": "Healthcare",
     "paid": true
 }
@@ -78,6 +79,6 @@ Bu satış İnternet üzerinden yapılmıştır.
 === OPENAI TOKEN USAGE ===
 ==================================================
 Model: gpt-3.5-turbo-0125
-Prompt Tokens: 2193
-Completion Tokens: 125
-Total Tokens: 2318
+Prompt Tokens: 2237
+Completion Tokens: 137
+Total Tokens: 2374
