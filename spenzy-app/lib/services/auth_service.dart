@@ -16,13 +16,13 @@ class AuthService {
   static const String keycloakUrl = 'http://localhost:8080';
   static const String realm = 'InvoiceParser';
   static const String clientId = 'spenzy-app';
-  
+
   // Keys for secure storage
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String stateKey = 'oauth_state';
   static const String verifierKey = 'code_verifier';
-  
+
   // Create secure storage instance
   final _storage = const FlutterSecureStorage();
   final _serviceAuth = ServiceAuth();
@@ -45,7 +45,7 @@ class AuthService {
   Future<String> getAccountUrl() async {
     final token = await getToken();
     if (token == null) throw Exception('Not authenticated');
-    
+
     return '$keycloakUrl/realms/$realm/account/#/security/signingin';
   }
 
@@ -55,10 +55,11 @@ class AuthService {
 
     try {
       final response = await http.get(
-        Uri.parse('$keycloakUrl/realms/$realm/protocol/openid-connect/userinfo'),
+        Uri.parse(
+            '$keycloakUrl/realms/$realm/protocol/openid-connect/userinfo'),
         headers: {'Authorization': 'Bearer $token'},
       );
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -75,24 +76,29 @@ class AuthService {
     try {
       // Verify Keycloak token
       final response = await http.get(
-        Uri.parse('$keycloakUrl/realms/$realm/protocol/openid-connect/userinfo'),
+        Uri.parse(
+            '$keycloakUrl/realms/$realm/protocol/openid-connect/userinfo'),
         headers: {'Authorization': 'Bearer $token'},
       );
-      
+
       if (response.statusCode != 200) {
         return false;
       }
 
       // Verify service tokens
-      final docToken = await _serviceAuth.getServiceToken('spenzy-document.service');
-      final expToken = await _serviceAuth.getServiceToken('spenzy-expense.service');
-      
+      final docToken =
+          await _serviceAuth.getServiceToken('spenzy-document.service');
+      final expToken =
+          await _serviceAuth.getServiceToken('spenzy-expense.service');
+
       if (docToken == null || expToken == null) {
         return false;
       }
 
-      final docValid = await _serviceAuth.verifyServiceToken('spenzy-document.service', docToken);
-      final expValid = await _serviceAuth.verifyServiceToken('spenzy-expense.service', expToken);
+      final docValid = await _serviceAuth.verifyServiceToken(
+          'spenzy-document.service', docToken);
+      final expValid = await _serviceAuth.verifyServiceToken(
+          'spenzy-expense.service', expToken);
 
       return docValid && expValid;
     } catch (e) {
@@ -118,7 +124,6 @@ class AuthService {
 
   Future<void> login(BuildContext context, {bool isRegister = false}) async {
     String? errorMessage;
-    bool loginSuccess = false;
 
     try {
       // Clear any existing tokens before starting new login
@@ -132,7 +137,7 @@ class AuthService {
 
       // Show the WebView in a dialog
       if (!context.mounted) return;
-      
+
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -148,7 +153,8 @@ class AuthService {
                 Navigator.of(context).pop(); // Close the dialog
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (context.mounted) {
-                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/', (route) => false);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(error)),
                     );
@@ -166,22 +172,26 @@ class AuthService {
                     try {
                       // Exchange tokens for both services
                       await Future.wait([
-                        _serviceAuth.exchangeToken(token, 'spenzy-document.service'),
-                        _serviceAuth.exchangeToken(token, 'spenzy-expense.service'),
+                        _serviceAuth.exchangeToken(
+                            token, 'spenzy-document.service'),
+                        _serviceAuth.exchangeToken(
+                            token, 'spenzy-expense.service'),
                       ]);
-                      loginSuccess = true;
-                      
+
                       // Navigate to home screen on success
                       if (context.mounted) {
                         Navigator.of(context).pop(); // Close WebView
-                        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/home', (route) => false);
                       }
                     } catch (e) {
                       await logout();
-                      errorMessage = 'Service token exchange failed: ${e.toString()}';
+                      errorMessage =
+                          'Service token exchange failed: ${e.toString()}';
                       if (context.mounted) {
                         Navigator.of(context).pop(); // Close WebView
-                        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/', (route) => false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(errorMessage!)),
                         );
@@ -191,7 +201,8 @@ class AuthService {
                     errorMessage = 'Failed to get authentication token';
                     if (context.mounted) {
                       Navigator.of(context).pop(); // Close WebView
-                      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, '/', (route) => false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(errorMessage!)),
                       );
@@ -201,7 +212,8 @@ class AuthService {
                   errorMessage = 'Authentication failed';
                   if (context.mounted) {
                     Navigator.of(context).pop(); // Close WebView
-                    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/', (route) => false);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(errorMessage!)),
                     );
@@ -212,7 +224,8 @@ class AuthService {
                 errorMessage = 'Authentication failed: ${e.toString()}';
                 if (context.mounted) {
                   Navigator.of(context).pop(); // Close WebView
-                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/', (route) => false);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(errorMessage!)),
                   );
@@ -246,7 +259,9 @@ class AuthService {
     await _storage.write(key: stateKey, value: state);
     await _storage.write(key: verifierKey, value: verifier);
 
-    final authUrl = Uri.parse('$keycloakUrl/realms/$realm/protocol/openid-connect/auth').replace(
+    final authUrl =
+        Uri.parse('$keycloakUrl/realms/$realm/protocol/openid-connect/auth')
+            .replace(
       queryParameters: {
         'response_type': 'code',
         'client_id': clientId,
@@ -312,4 +327,4 @@ class OAuthCredentials {
   String? refreshToken;
 
   OAuthCredentials(this.authUrl, {this.accessToken, this.refreshToken});
-} 
+}
